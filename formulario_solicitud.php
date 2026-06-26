@@ -7,35 +7,55 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $conn = new mysqli("localhost", "root", "", "ong_inventario");
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
     
-    $usuario_id = $_SESSION['usuario_id'];
-    $centro_id = $_SESSION['centro_id']; // El centro asociado al voluntario en la BD
+    try {
+        $conn = new mysqli("localhost", "root", "", "ong_inventario");
+        
+        $usuario_id = $_SESSION['usuario_id'];
+        $centro_id = $_SESSION['centro_id']; 
 
-    // Insertar cabecera de la solicitud
-    $conn->query("INSERT INTO solicitudes (usuario_id, centro_id) VALUES ($usuario_id, $centro_id)");
-    $solicitud_id = $conn->insert_id;
+        // Iniciar transacción explícita
+        $conn->begin_transaction();
 
-    // Recuperar los arreglos dinámicos enviados por JS
-    $nombres_insumos = $_POST['nombre_insumo'];
-    $cantidades = $_POST['cantidad_insumo'];
+        // Insertar cabecera de la solicitud
+        $conn->query("INSERT INTO solicitudes (usuario_id, centro_id) VALUES ($usuario_id, $centro_id)");
+        $solicitud_id = $conn->insert_id;
 
-    if (is_array($nombres_insumos)) {
-        for ($i = 0; $i < count($nombres_insumos); $i++) {
-            $nombre = $conn->real_escape_string($nombres_insumos[$i]);
-            $cantidad = $conn->real_escape_string($cantidades[$i]);
+        // Recuperar los arreglos dinámicos enviados por JS
+        $nombres_insumos = $_POST['nombre_insumo'];
+        $cantidades = $_POST['cantidad_insumo'];
 
-            if (!empty($nombre) && !empty($cantidad)) {
-                $conn->query("INSERT INTO detalle_solicitudes (solicitud_id, nombre_insumo, cantidad) VALUES ($solicitud_id, '$nombre', '$cantidad')");
+        if (is_array($nombres_insumos)) {
+            for ($i = 0; $i < count($nombres_insumos); $i++) {
+                $nombre = $conn->real_escape_string($nombres_insumos[$i]);
+                $cantidad = $conn->real_escape_string($cantidades[$i]);
+
+                if (!empty($nombre) && !empty($cantidad)) {
+                    $conn->query("INSERT INTO detalle_solicitudes (solicitud_id, nombre_insumo, cantidad) VALUES ($solicitud_id, '$nombre', '$cantidad')");
+                }
             }
         }
+        
+        // Todo ocurrió bien, guardamos definitivamente
+        $conn->commit();
+        $conn->close();
+        
+        echo "<script>alert('¡Solicitud enviada a Montalbán correctamente!'); window.location.href='formulario_solicitud.php';</script>";
+        exit;
+        
+    } catch (Exception $e) {
+        // Deshacer cualquier inserción previa de este intento
+        if (isset($conn) && $conn->ping()) {
+            $conn->rollback();
+            $conn->close();
+        }
+        echo "<script>alert('❌ Error crítico al procesar la solicitud. Intente nuevamente.'); window.location.href='formulario_solicitud.php';</script>";
+        exit;
     }
-    echo "<script>alert('¡Solicitud enviada a Montalbán correctamente!'); window.location.href='formulario_solicitud.php';</script>";
-    $conn->close();
 }
 
 include('header.php');
-
 ?>
 
 <!DOCTYPE html>
