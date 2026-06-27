@@ -8,18 +8,17 @@ if (!isset($_SESSION['usuario_id'])) {
 include('header.php');
 require_once('conexion.php');
 
-// Obtenemos el ID del centro del usuario loggeado.
 $centro_id = isset($_SESSION['centro_id']) ? intval($_SESSION['centro_id']) : 1; 
 
 // ─────────────────────────────────────────────
-// TABLA 1: ENTRADAS (Ingresos al centro del usuario)
+// TABLA 1: ENTRADAS
 // ─────────────────────────────────────────────
 $sql_entradas = "
     SELECT 
         m.id, 
         m.fecha AS fecha_hora, 
         m.tipo_movimiento,
-        COALESCE(ca_orig.nombre, org.nombre, CONCAT(p.nombre, ' ', COALESCE(p.apellido, '')), 'Donación Externa Anónima') AS origen,
+        COALESCE(ca_orig.nombre, org.nombre, CONCAT(p.nombre, ' ', COALESCE(p.apellido, '')), 'Donación Externa Anón') AS origen,
         m.detalles, 
         u.nombre AS usuario_nombre,
         GROUP_CONCAT(ins.nombre ORDER BY ins.nombre SEPARATOR ', ') AS insumos,
@@ -44,7 +43,7 @@ if ($res_entradas) {
 }
 
 // ─────────────────────────────────────────────
-// TABLA 2: SALIDAS (Despachos desde el centro del usuario)
+// TABLA 2: SALIDAS
 // ─────────────────────────────────────────────
 $sql_salidas = "
     SELECT 
@@ -85,6 +84,7 @@ if ($res_salidas) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <style>
+        /* Ajustes base DataTables */
         .dataTables_wrapper .dataTables_filter input {
             background-color: #f8fafc !important;
             border: 1px solid #e2e8f0 !important;
@@ -112,6 +112,47 @@ if ($res_salidas) {
             border-radius: 0.5rem !important;
         }
         table.dataTable { border-collapse: collapse !important; }
+
+        /* MAGIA CSS: Transformación Adaptativa a Tarjetas en Móviles (Menor a 1024px) */
+        @media (max-width: 1023px) {
+            .dataTables_wrapper .dataTables_filter {
+                float: none !important;
+                text-align: left !important;
+                margin-bottom: 1rem;
+            }
+            .dataTables_wrapper .dataTables_length {
+                float: none !important;
+                text-align: left !important;
+                margin-bottom: 1rem;
+            }
+            table.dataTable uppercase, 
+            table.dataTable thead { 
+                display: none !important; 
+            }
+            table.dataTable tbody tr { 
+                display: block !important;
+                background: #f8fafc !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 0.75rem !important;
+                margin-bottom: 1rem !important;
+                padding: 1rem !important;
+                box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+            }
+            table.dataTable tbody td { 
+                display: block !important;
+                text-align: left !important;
+                padding: 0.25rem 0 !important;
+                border: none !important;
+                font-size: 0.875rem !important;
+            }
+            /* Generación de etiquetas en móviles para mantener contexto */
+            table.dataTable tbody td:nth-child(1):before { content: "ID: "; font-weight: 800; color: #64748b; }
+            table.dataTable tbody td:nth-child(2):before { content: "Fecha: "; font-weight: 800; color: #64748b; }
+            table.dataTable tbody td:nth-child(3):before { content: "Entidad: "; font-weight: 800; color: #64748b; }
+            table.dataTable tbody td:nth-child(4):before { content: "Detalle: "; font-weight: 800; color: #64748b; display: block; margin-top: 4px;}
+            table.dataTable tbody td:nth-child(5):before { content: "Obs: "; font-weight: 800; color: #64748b; }
+            table.dataTable tbody td:nth-child(6):before { content: "Responsable: "; font-weight: 800; color: #64748b; }
+        }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans">
@@ -136,14 +177,13 @@ if ($res_salidas) {
             <?php if (empty($entradas)): ?>
                 <div class="text-center py-8 text-slate-400 text-sm font-medium">No hay entradas registradas para este centro.</div>
             <?php else: ?>
-
-                <div class="hidden lg:block overflow-x-auto">
+                <div class="overflow-x-auto">
                     <table id="tabla-ingresos" class="w-full text-left text-sm border-collapse display">
                         <thead>
                             <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider">
                                 <th class="p-3">ID</th>
                                 <th class="p-3">Fecha</th>
-                                <th class="p-3">Origen (Donante / Centro)</th>
+                                <th class="p-3">Origen</th>
                                 <th class="p-3">Insumos y Cantidad</th>
                                 <th class="p-3">Observaciones</th>
                                 <th class="p-3">Registrado Por</th>
@@ -156,7 +196,7 @@ if ($res_salidas) {
                                     <td class="p-3"><?php echo date('d/m/Y g:i A', strtotime($in['fecha_hora'])); ?></td>
                                     <td class="p-3 font-semibold text-slate-800">
                                         <?php if(str_contains(strtolower($in['tipo_movimiento']), 'traslado')): ?>
-                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded uppercase">Traslado</span>
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded uppercase mr-1">Traslado</span>
                                         <?php endif; ?>
                                         <?php echo htmlspecialchars($in['origen']); ?>
                                     </td>
@@ -169,39 +209,12 @@ if ($res_salidas) {
                                         <?php endif; ?>
                                     </td>
                                     <td class="p-3 text-xs"><?php echo htmlspecialchars($in['detalles'] ?: '—'); ?></td>
-                                    <td class="p-3 text-slate-700 text-xs">👤 <?php echo htmlspecialchars($in['usuario_nombre']); ?></td>
+                                    <td class="p-3 text-slate-700 text-xs"><?php echo htmlspecialchars($in['usuario_nombre']); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-
-                <div class="grid grid-cols-1 gap-4 lg:hidden">
-                    <?php foreach ($entradas as $in): ?>
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="font-mono text-xs font-black text-slate-900">#IN-<?php echo $in['id']; ?></span>
-                                <span class="text-xs text-slate-500"><?php echo date('d/m/Y h:i A', strtotime($in['fecha_hora'])); ?></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="text-[10px] uppercase tracking-wide text-slate-400">Vino desde:</span>
-                                <div class="font-bold text-slate-900"><?php echo htmlspecialchars($in['origen']); ?></div>
-                            </div>
-                            <?php if ($in['insumos']): ?>
-                            <div class="mb-2">
-                                <span class="text-[10px] uppercase tracking-wide text-slate-400">Insumos Recibidos</span>
-                                <div class="text-sm text-emerald-700 font-bold"><?php echo htmlspecialchars($in['insumos']); ?></div>
-                                <div class="text-xs text-slate-500">Cant: <?php echo htmlspecialchars($in['cantidades']); ?></div>
-                            </div>
-                            <?php endif; ?>
-                            <div class="mb-2">
-                                <span class="text-[10px] uppercase tracking-wide text-slate-400">Detalles</span>
-                                <p class="text-xs text-slate-600 bg-white p-2 rounded border border-slate-200/70 mt-1"><?php echo htmlspecialchars($in['detalles'] ?: 'Sin observaciones'); ?></p>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
             <?php endif; ?>
         </div>
     </div>
@@ -219,14 +232,13 @@ if ($res_salidas) {
             <?php if (empty($salidas)): ?>
                 <div class="text-center py-8 text-slate-400 text-sm font-medium">No hay despachos registrados para este centro.</div>
             <?php else: ?>
-
-                <div class="hidden lg:block overflow-x-auto">
+                <div class="overflow-x-auto">
                     <table id="tabla-despachos" class="w-full text-left text-sm border-collapse display">
                         <thead>
                             <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider">
                                 <th class="p-3">ID</th>
                                 <th class="p-3">Fecha</th>
-                                <th class="p-3">Enviado A (Beneficiario / Centro)</th>
+                                <th class="p-3">Enviado A</th>
                                 <th class="p-3">Insumos y Cantidad</th>
                                 <th class="p-3">Observaciones</th>
                                 <th class="p-3">Despachado Por</th>
@@ -239,7 +251,7 @@ if ($res_salidas) {
                                     <td class="p-3"><?php echo date('d/m/Y g:i A', strtotime($out['fecha_hora'])); ?></td>
                                     <td class="p-3 font-semibold text-slate-900">
                                         <?php if(str_contains(strtolower($out['tipo_movimiento']), 'traslado')): ?>
-                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded uppercase">Traslado</span>
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded uppercase mr-1">Traslado</span>
                                         <?php endif; ?>
                                         <?php echo htmlspecialchars($out['destino']); ?>
                                     </td>
@@ -252,39 +264,12 @@ if ($res_salidas) {
                                         <?php endif; ?>
                                     </td>
                                     <td class="p-3 text-xs"><?php echo htmlspecialchars($out['detalles'] ?: '—'); ?></td>
-                                    <td class="p-3 text-slate-700 text-xs">👤 <?php echo htmlspecialchars($out['usuario_nombre']); ?></td>
+                                    <td class="p-3 text-slate-700 text-xs"><?php echo htmlspecialchars($out['usuario_nombre']); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-
-                <div class="grid grid-cols-1 gap-4 lg:hidden">
-                    <?php foreach ($salidas as $out): ?>
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-rose-500">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="font-mono text-xs font-black text-slate-900">#OUT-<?php echo $out['id']; ?></span>
-                                <span class="text-xs text-slate-500"><?php echo date('d/m/Y h:i A', strtotime($out['fecha_hora'])); ?></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="text-[10px] uppercase tracking-wide text-slate-400">Entregado/Enviado a:</span>
-                                <div class="font-bold text-slate-900 mt-1"><?php echo htmlspecialchars($out['destino']); ?></div>
-                            </div>
-                            <?php if ($out['insumos']): ?>
-                            <div class="mb-2">
-                                <span class="text-[10px] uppercase tracking-wide text-slate-400">Insumos Entregados</span>
-                                <div class="text-sm text-rose-700 font-bold"><?php echo htmlspecialchars($out['insumos']); ?></div>
-                                <div class="text-xs text-slate-500">Cant: <?php echo htmlspecialchars($out['cantidades']); ?></div>
-                            </div>
-                            <?php endif; ?>
-                            <div class="mb-2">
-                                <span class="text-[10px] uppercase tracking-wide text-slate-400">Detalles</span>
-                                <p class="text-xs text-slate-600 bg-white p-2 rounded border border-slate-200/70 mt-1"><?php echo htmlspecialchars($out['detalles'] ?: 'Sin observaciones'); ?></p>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
             <?php endif; ?>
         </div>
     </div>
@@ -295,17 +280,36 @@ if ($res_salidas) {
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Definimos el idioma de DataTables
     var lang = {
-        "lengthMenu":   "Mostrar _MENU_ registros por página",
+        "lengthMenu":   "Mostrar _MENU_ registros",
         "zeroRecords":  "No se encontraron resultados",
-        "info":         "Mostrando página _PAGE_ de _PAGES_",
-        "infoEmpty":    "No hay registros disponibles",
-        "infoFiltered": "(filtrado de _MAX_ registros)",
+        "info":         "Pág _PAGE_ de _PAGES_",
+        "infoEmpty":    "No hay registros",
+        "infoFiltered": "(filtrado de _MAX_)",
         "search":       "Buscar:",
         "paginate": { "first": "Primero", "last": "Último", "next": "Sig.", "previous": "Ant." }
     };
-    $('#tabla-ingresos').DataTable({ pageLength: 10, lengthMenu: [5,10,25,50], language: lang, order: [[1,'desc']] });
-    $('#tabla-despachos').DataTable({ pageLength: 10, lengthMenu: [5,10,25,50], language: lang, order: [[1,'desc']] });
+
+    // Evaluamos el ancho de pantalla en tiempo de ejecución
+    // 1024px es el breakpoint estándar 'lg' de Tailwind CSS
+    var cantidadRegistros = ($(window).width() < 1024) ? 3 : 10;
+
+    // Inicializamos la tabla de ingresos
+    $('#tabla-ingresos').DataTable({ 
+        pageLength: cantidadRegistros, 
+        lengthMenu: [3, 5, 10, 25, 50], 
+        language: lang, 
+        order: [[1, 'desc']] 
+    });
+
+    // Inicializamos la tabla de despachos
+    $('#tabla-despachos').DataTable({ 
+        pageLength: cantidadRegistros, 
+        lengthMenu: [3, 5, 10, 25, 50], 
+        language: lang, 
+        order: [[1, 'desc']] 
+    });
 });
 </script>
 
