@@ -52,39 +52,51 @@ if ($centro['es_sede_principal']) {
 
 /*
 |--------------------------------------------------------------------------
-| Inventario del centro
+| Inventario del centro actual
 |--------------------------------------------------------------------------
 */
 
 $stmt = $conn->prepare("
     SELECT
-
         i.id,
-
         i.nombre,
-
         i.unidad_medida,
-
         inv.cantidad,
-
         inv.ultima_actualizacion
-
     FROM inventario inv
-
-    INNER JOIN insumos i
-        ON i.id = inv.insumo_id
-
+    INNER JOIN insumos i ON i.id = inv.insumo_id
     WHERE inv.centro_id = ?
       AND inv.cantidad > 0
-
     ORDER BY i.nombre
 ");
 
 $stmt->bind_param("i", $centro_id);
-
 $stmt->execute();
-
 $inventario_actual = $stmt->get_result();
+
+/*
+|--------------------------------------------------------------------------
+| CONSULTA NUEVA: Inventario Global (Para la Sede Central / Administrador)
+|--------------------------------------------------------------------------
+*/
+$inventario_global = null;
+if ($centro['es_sede_principal']) {
+    $query_global = "
+        SELECT 
+            inv.id AS inventario_id,
+            c.nombre AS centro_nombre,
+            i.nombre AS insumo_nombre,
+            inv.cantidad,
+            i.unidad_medida,
+            inv.ultima_actualizacion
+        FROM inventario inv
+        INNER JOIN centros_acopio c ON inv.centro_id = c.id
+        INNER JOIN insumos i ON inv.insumo_id = i.id
+        WHERE inv.cantidad > 0
+        ORDER BY c.nombre ASC, i.nombre ASC
+    ";
+    $inventario_global = $conn->query($query_global);
+}
 ?>
 
 <!DOCTYPE html>
@@ -140,17 +152,97 @@ $inventario_actual = $stmt->get_result();
             <p class="text-sm text-slate-500 font-medium">Panel General de Control de Inventario</p>
         </div>
         <a href="agregar_insumo.php" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition text-center shadow-md shadow-sky-600/10">
-        Agregar Insumo
+            Agregar Insumo
         </a>
     </div>
 
     <div class="space-y-6">
         
+        <?php if ($centro['es_sede_principal'] && $inventario_global): ?>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                <h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">
+                    <span>🏢 Inventario Global (Todos los Centros)</span>
+                </h3>
+                <span class="inline-flex items-center w-fit px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200 shadow-xs">
+                    <?php echo $inventario_global->num_rows; ?> asignaciones registradas
+                </span>
+            </div>
+
+            <?php if ($inventario_global->num_rows === 0): ?>
+                <div class="text-center py-12 text-slate-400 text-sm font-medium">
+                    No hay registros de insumos en ningún centro de acopio.
+                </div>
+            <?php else: ?>
+                <div class="block md:hidden mb-4">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Buscar en centros:</label>
+                    <input type="text" id="buscar-movil-global" placeholder="Buscar por centro o insumo..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
+                </div>
+
+                <div class="hidden md:block overflow-x-auto">
+                    <table id="tabla-global" class="w-full text-left text-sm border-collapse display">
+                        <thead>
+                            <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                                <th class="p-3">Centro de Acopio</th>
+                                <th class="p-3">Insumo</th>
+                                <th class="p-3">Stock Disponible</th>
+                                <th class="p-3">Unidad de Medida</th>
+                                <th class="p-3">Última Actualización</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            <?php while($row_g = $inventario_global->fetch_assoc()): ?>
+                                <tr class="hover:bg-slate-50/80 transition">
+                                    <td class="p-3 font-bold text-slate-900"><?php echo htmlspecialchars($row_g['centro_nombre']); ?></td>
+                                    <td class="p-3 font-semibold text-sky-700"><?php echo htmlspecialchars($row_g['insumo_nombre']); ?></td>
+                                    <td class="p-3 font-mono font-bold text-slate-800"><?php echo number_format($row_g['cantidad'], 2); ?></td>
+                                    <td class="p-3 text-slate-500 text-xs"><?php echo htmlspecialchars($row_g['unidad_medida']); ?></td>
+                                    <td class="p-3 text-xs text-slate-400"><?php echo date('d/m/Y g:i A', strtotime($row_g['ultima_actualizacion'])); ?></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="contenedor-movil-global" class="grid grid-cols-1 gap-3 md:hidden">
+                    <?php 
+                    $inventario_global->data_seek(0); 
+                    while($row_g = $inventario_global->fetch_assoc()): 
+                    ?>
+                        <div class="tarjeta-movil-global bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2"
+                             data-search="<?php echo strtolower(htmlspecialchars($row_g['centro_nombre'] . " " . $row_g['insumo_nombre'])); ?>">
+                            <div class="border-b border-slate-200 pb-1">
+                                <div class="text-[10px] text-slate-400 uppercase font-bold">Centro Destino</div>
+                                <div class="text-sm font-black text-slate-900"><?php echo htmlspecialchars($row_g['centro_nombre']); ?></div>
+                            </div>
+                            <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-slate-100">
+                                <div>
+                                    <div class="text-[10px] text-slate-400 font-bold">Insumo</div>
+                                    <div class="text-xs font-bold text-sky-700"><?php echo htmlspecialchars($row_g['insumo_nombre']); ?></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[10px] text-slate-400 font-bold">Stock</div>
+                                    <div class="text-xs font-black text-slate-800"><?php echo number_format($row_g['cantidad'], 2); ?> <span class="font-normal text-slate-500"><?php echo htmlspecialchars($row_g['unidad_medida']); ?></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+
+                <div class="flex md:hidden items-center justify-between mt-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <button id="prev-movil-global" class="px-3 py-1.5 text-xs font-bold bg-white border border-slate-300 text-slate-700 rounded-lg shadow-2xs disabled:opacity-50">Ant.</button>
+                    <span id="info-movil-global" class="text-xs font-semibold text-slate-500">Pág. 1</span>
+                    <button id="next-movil-global" class="px-3 py-1.5 text-xs font-bold bg-white border border-slate-300 text-slate-700 rounded-lg shadow-2xs disabled:opacity-50">Sig.</button>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
             
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
                 <h3 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <span>📦 Insumos Disponibles Actualmente</span>
+                    <span>📦 Insumos Disponibles en este Almacén</span>
                 </h3>
                 <span class="inline-flex items-center w-fit px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs">
                     <?php echo $inventario_actual->num_rows; ?> ítems en stock
@@ -159,7 +251,7 @@ $inventario_actual = $stmt->get_result();
 
             <?php if ($inventario_actual->num_rows === 0): ?>
                 <div class="text-center py-12 text-slate-400 text-sm font-medium">
-                    No hay insumos disponibles en almacén.
+                    No hay insumos disponibles en este almacén.
                 </div>
             <?php else: ?>
                 
@@ -205,7 +297,6 @@ $inventario_actual = $stmt->get_result();
 
                 <div id="contenedor-movil-inventario" class="grid grid-cols-1 gap-3 md:hidden">
                     <?php 
-                    // Reseteamos el puntero para volver a iterar sobre los registros en la vista móvil
                     $inventario_actual->data_seek(0); 
                     while($row = $inventario_actual->fetch_assoc()): 
                     ?>
@@ -257,7 +348,7 @@ $inventario_actual = $stmt->get_result();
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
     $(document).ready(function() {
-        // 1. Inicializar la tabla de escritorio con paginación base a 10 elementos
+        // 1. Inicializar la tabla de escritorio de inventario Local
         $('#tabla-inventario').DataTable({
             "pageLength": 10,
             "lengthMenu": [5, 10, 25, 50],
@@ -272,12 +363,33 @@ $inventario_actual = $stmt->get_result();
                             <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
                         </svg>
                        </span>`,
-                "paginate": { "first": "Primero", "last": "Último", "next": "Sig.", "previous": "Ant." }
+                "paginate": { "next": "Sig.", "previous": "Ant." }
             },
-            "order": [[1, "asc"]] // Ordenar alfabéticamente por nombre de insumo
+            "order": [[1, "asc"]]
         });
 
-        // 2. Lógica interna para la paginación y búsqueda reactiva en celulares
+        // 2. Inicializar la tabla de escritorio Global (si existe)
+        if ($('#tabla-global').length) {
+            $('#tabla-global').DataTable({
+                "pageLength": 10,
+                "lengthMenu": [5, 10, 25, 50],
+                "language": {
+                    "lengthMenu": "Mostrar _MENU_ registros por página",
+                    "zeroRecords": "No se encontraron datos coincidentes",
+                    "info": "Mostrando página _PAGE_ de _PAGES_",
+                    "infoEmpty": "Sin datos globales",
+                "search": `<span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+                        </svg>
+                       </span>`,
+                    "paginate": { "next": "Sig.", "previous": "Ant." }
+                },
+                "order": [[0, "asc"], [1, "asc"]]
+            });
+        }
+
+        // 3. Lógica interna para la paginación y búsqueda reactiva en celulares (Local)
         function inicializarMotorMovil() {
             let paginaActual = 1;
             const tarjetasPorPagina = 10; 
@@ -294,7 +406,6 @@ $inventario_actual = $stmt->get_result();
                 if (paginaActual > totalPaginas) paginaActual = totalPaginas;
 
                 $('.tarjeta-movil-stock').addClass('hidden');
-
                 let inicio = (paginaActual - 1) * tarjetasPorPagina;
                 let fin = inicio + tarjetasPorPagina;
                 tarjetasFiltradas.slice(inicio, fin).removeClass('hidden');
@@ -311,7 +422,42 @@ $inventario_actual = $stmt->get_result();
             renderizarMovil(); 
         }
 
+        // 4. Lógica interna para celulares (Global)
+        function inicializarMotorMovilGlobal() {
+            if (!$('#contenedor-movil-global').length) return;
+            let paginaActual = 1;
+            const tarjetasPorPagina = 10;
+
+            function renderizarMovilGlobal() {
+                let filtro = $('#buscar-movil-global').val().toLowerCase();
+                let tarjetasFiltradas = $('.tarjeta-movil-global').filter(function() {
+                    return $(this).attr('data-search').includes(filtro);
+                });
+
+                let totalTarjetas = tarjetasFiltradas.length;
+                let totalPaginas = Math.ceil(totalTarjetas / tarjetasPorPagina) || 1;
+
+                if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+
+                $('.tarjeta-movil-global').addClass('hidden');
+                let inicio = (paginaActual - 1) * tarjetasPorPagina;
+                let fin = inicio + tarjetasPorPagina;
+                tarjetasFiltradas.slice(inicio, fin).removeClass('hidden');
+
+                $('#info-movil-global').text(`Pág. ${paginaActual} de ${totalPaginas}`);
+                $('#prev-movil-global').prop('disabled', paginaActual === 1);
+                $('#next-movil-global').prop('disabled', paginaActual === totalPaginas);
+            }
+
+            $('#prev-movil-global').click(function() { if (paginaActual > 1) { paginaActual--; renderizarMovilGlobal(); } });
+            $('#next-movil-global').click(function() { paginaActual++; renderizarMovilGlobal(); });
+            $('#buscar-movil-global').on('input', function() { paginaActual = 1; renderizarMovilGlobal(); });
+
+            renderizarMovilGlobal();
+        }
+
         inicializarMotorMovil();
+        inicializarMotorMovilGlobal();
     });
 </script>
 

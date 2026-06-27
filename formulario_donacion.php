@@ -41,14 +41,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // 1. Lógica según quién recibe la donación
         if ($tipo_receptor === 'persona') {
-            $cedula = $conn->real_escape_string(trim($_POST['cedula'] ?? ''));
-            $nombre = $conn->real_escape_string(trim($_POST['nombre'] ?? ''));
-            $apellido = $conn->real_escape_string(trim($_POST['apellido'] ?? ''));
-            $telefono = $conn->real_escape_string(trim($_POST['telefono'] ?? ''));
 
-            if (empty($cedula) || empty($nombre) || empty($apellido)) {
-                throw new Exception('Complete los datos obligatorios del beneficiario.');
-            }
+            $nombre = !empty(trim($_POST['nombre'])) ? $conn->real_escape_string($_POST['nombre']) : 'Desconocido';
+            $apellido = !empty(trim($_POST['apellido'])) ? $conn->real_escape_string($_POST['apellido']) : '';
+            $cedula = !empty(trim($_POST['cedula'])) ? $conn->real_escape_string($_POST['cedula']) : 'X-XXXXXXXXX';
+            $telefono = !empty(trim($_POST['telefono'])) ? $conn->real_escape_string($_POST['telefono']) : 'XXXX-XXXXXXX';
 
             $check = $conn->query("SELECT id FROM personas WHERE cedula = '$cedula'");
             if ($check->num_rows > 0) {
@@ -153,20 +150,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider border-b border-slate-200/60 pb-1.5 flex items-center gap-1.5">👤 Datos de la Persona</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-500">Cédula:</label>
-                        <input type="text" name="cedula" id="cedula" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800">
+                        <label class="text-xs font-bold text-slate-500">Cédula (opcional):</label>
+                        <input type="text" placeholder="Desconocido" name="cedula" id="cedula" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-500">Nombre:</label>
-                        <input type="text" name="nombre" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800">
+                        <label class="text-xs font-bold text-slate-500">Nombre (opcional):</label>
+                        <input type="text" placeholder="Desconocido" name="nombre" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-500">Apellido:</label>
-                        <input type="text" name="apellido" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800">
+                        <label class="text-xs font-bold text-slate-500">Apellido (opcional):</label>
+                        <input type="text" placeholder="Desconocido" name="apellido" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-500">Teléfono:</label>
-                        <input type="text" name="telefono" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800">
+                        <label class="text-xs font-bold text-slate-500">Teléfono (opcional):</label>
+                        <input type="text" placeholder="Desconocido" name="telefono" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800">
                     </div>
                 </div>
             </div>
@@ -262,7 +259,6 @@ function toggleReceptor() {
     document.getElementById('campos_persona').style.display = tipo === 'persona' ? 'block' : 'none';
     document.getElementById('campos_organizacion').style.display = tipo === 'organizacion' ? 'block' : 'none';
     document.getElementById('campos_centro').style.display = tipo === 'centro' ? 'block' : 'none';
-    document.getElementById('cedula').required = tipo === 'persona';
 }
 
 function toggleCantidad(id) {

@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $usuario = trim($_POST['username']);
     $clave   = $_POST['password'];
-
+    echo password_hash('AdminONG2026', PASSWORD_BCRYPT);
     $stmt = $conn->prepare("
         SELECT
 
