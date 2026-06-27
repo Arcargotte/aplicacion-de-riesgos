@@ -40,6 +40,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                     <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
                         <li><a href="panel_central.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Insumos</a></li>
                         <li><a href="formulario_donacion.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Donación</a></li>
+                        <li><a href="recepcion_donaciones.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Recepción de donaciones</a></li>
                         <li><a href="historico_donaciones.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Historial</a></li>
                         <li><a href="gestion_usuarios.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Personal</a></li>
                     <?php else: ?>

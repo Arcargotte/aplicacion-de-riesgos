@@ -146,7 +146,7 @@ include('header.php');
         
         <div class="bg-slate-50 border-b border-slate-200 px-6 py-4">
             <h2 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                📥 Recepción de Donaciones de Terceros
+                Recepción de Donaciones de Terceros
             </h2>
             <p class="text-xs text-slate-500 font-medium">Registra de forma centralizada los insumos donados por entes gubernamentales, privados o civiles.</p>
         </div>
@@ -262,7 +262,7 @@ include('header.php');
 
                                 <div class="absolute -top-2 right-10 md:right-12 px-2 py-0.5 text-[9px] font-black rounded-md uppercase tracking-wider shadow-xs"
                                      :class="fila.existe ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'">
-                                    <span x-text="fila.existe ? '📈 Sumará Stock' : '✨ Nuevo Insumo'"></span>
+                                    <span x-text="fila.existe ? 'Sumará Stock' : 'Nuevo Insumo'"></span>
                                 </div>
 
                             </div>
@@ -272,7 +272,7 @@ include('header.php');
 
                 <div class="pt-4 border-t border-slate-100">
                     <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-black py-4 px-4 rounded-xl transition text-center shadow-lg uppercase tracking-wider cursor-pointer">
-                        📥 Procesar Lote e Incrementar Inventario
+                        Procesar Lote e Incrementar Inventario
                     </button>
                 </div>
 
