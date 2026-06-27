@@ -1,0 +1,11 @@
+RewriteEngine On
+RewriteRule ^index$ index.php
+RewriteRule ^agregar_insumo$ agregar_insumo.php
+RewriteRule ^crear_usuario$ crear_usuario.php
+RewriteRule ^formulario_donacion$ formulario_donacion.php
+RewriteRule ^formulario_solicitud$ formulario_solicitud.php
+RewriteRule ^gestion_usuarios$ gestion_usuarios.php
+RewriteRule ^historico_donaciones$ historico_donaciones.php
+RewriteRule ^login$ login.php
+RewriteRule ^panel_central$ panel_central.php
+RewriteRule ^recepcion_donaciones$ recepcion_donaciones.php
