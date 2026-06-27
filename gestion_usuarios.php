@@ -11,11 +11,7 @@ include('header.php');
 // Habilitar el reporte de excepciones para usar transacciones robustas con try-catch
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-try {
-    $conn = new mysqli("localhost", "root", "", "ong_inventario");
-} catch (Exception $e) {
-    die("Conexión fallida: " . $e->getMessage());
-}
+require_once('conexion.php');
 
 $mensaje = "";
 $tipo_mensaje = "";

@@ -8,10 +8,7 @@ if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_centr
 
 include('header.php');
 
-$conn = new mysqli("localhost", "root", "", "ong_inventario");
-if ($conn->connect_error) { 
-    die("Conexión fallida: " . $conn->connect_error); 
-}
+require_once('conexion.php');
 
 // 1. CONSULTA DE ENTRADAS: Donaciones recibidas por la ONG
 $sql_ingresos = "SELECT 

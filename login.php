@@ -15,11 +15,7 @@ $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Conexión nativa a MariaDB
-    $conn = new mysqli("localhost", "root", "", "ong_inventario");
-
-    if ($conn->connect_error) {
-        die("Error de conexión: " . $conn->connect_error);
-    }
+    require_once('conexion.php');
 
     $username = $conn->real_escape_string($_POST['username']);
     $password = $_POST['password'];

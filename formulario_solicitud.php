@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
     
     try {
-        $conn = new mysqli("localhost", "root", "", "ong_inventario");
+        require_once('conexion.php');
         
         $usuario_id = $_SESSION['usuario_id'];
         $centro_id = $_SESSION['centro_id']; 

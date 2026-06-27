@@ -11,10 +11,7 @@ include('header.php');
 $mensaje = "";
 $tipo_mensaje = "";
 
-$conn = new mysqli("localhost", "root", "", "ong_inventario");
-if ($conn->connect_error) { 
-    die("Conexión fallida: " . $conn->connect_error); 
-}
+require_once('conexion.php');
 
 // 1. Obtener los roles disponibles desde la BD para mapeo
 $roles_query = $conn->query("SELECT id, nombre FROM roles");

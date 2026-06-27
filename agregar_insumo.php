@@ -9,11 +9,7 @@ if (!isset($_SESSION['usuario_id'])) {
 // --- 1. ENDPOINT AJAX: BUSQUEDA EN TIEMPO REAL (AUTOCOMPLETADO) ---
 if (isset($_GET['buscar_insumo'])) {
     header('Content-Type: application/json');
-    $conn = new mysqli("localhost", "root", "", "ong_inventario");
-    if ($conn->connect_error) {
-        echo json_encode([]);
-        exit;
-    }
+    require_once('conexion.php');
     
     $busqueda = $conn->real_escape_string(trim($_GET['buscar_insumo']));
     

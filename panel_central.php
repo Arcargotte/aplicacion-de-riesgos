@@ -9,8 +9,7 @@ if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_centr
 // Incluimos el navbar
 include('header.php');
 
-$conn = new mysqli("localhost", "root", "", "ong_inventario");
-if ($conn->connect_error) { die("Conexión fallida: " . $conn->connect_error); }
+require_once('conexion.php');
 
 // Consulta requerida: Solo insumos disponibles
 $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponible' ORDER BY fecha_ingreso DESC");

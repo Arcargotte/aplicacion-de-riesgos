@@ -9,8 +9,7 @@ if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_centr
 // --- 1. ENDPOINT AJAX: BUSCADOR INTERNO PARA LAS FILAS ---
 if (isset($_GET['sugerir_insumo'])) {
     header('Content-Type: application/json');
-    $conn = new mysqli("localhost", "root", "", "ong_inventario");
-    if ($conn->connect_error) { echo json_encode([]); exit; }
+    require_once('conexion.php');
     
     $busqueda = $conn->real_escape_string(trim($_GET['sugerir_insumo']));
     if (empty($busqueda)) { echo json_encode([]); exit; }
