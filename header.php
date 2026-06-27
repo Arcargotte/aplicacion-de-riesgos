@@ -29,9 +29,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         <div class="flex justify-between items-center h-16 gap-4">
             
             <div class="flex-shrink-0">
-                <h1 class="text-xs sm:text-sm md:text-base font-black tracking-wide text-sky-400 uppercase">
-                    ONG Montalbán
-                </h1>
+                <a href="panel_central.php" class="flex items-center">
+                    <img src="assets/logo_app.png" alt="Logo ONG" class="h-10 w-auto object-contain">
+                </a>
             </div>
             
             <nav class="hidden md:flex flex-1 items-center justify-between ml-6">
