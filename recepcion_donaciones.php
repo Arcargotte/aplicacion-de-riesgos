@@ -193,7 +193,7 @@ include('header.php');
                     <div class="flex flex-col gap-1">
                         <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Tipo de Entidad</label>
                         <select name="origen_donante" required x-model="tipoDonante"
-                                @change="if(tipoDonante === 'ONG_Principal') { nombreDonante = 'Samaritan`s Purse'; } else { nombreDonante = ''; }"
+                                @change="if(tipoDonante === 'ONG_Principal') { nombreDonante = 'Samaritan´s Purse'; } else { nombreDonante = ''; }"
                                 class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500 transition cursor-pointer">
                             <option value="Persona Natural">👤 Persona Natural</option>
                             <option value="Empresa Privada">🏢 Empresa Privada</option>
