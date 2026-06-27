@@ -17,12 +17,18 @@ if (isset($_GET['sugerir_insumo'])) {
     $busqueda = $conn->real_escape_string(trim($_GET['sugerir_insumo']));
     if (empty($busqueda)) { echo json_encode([]); exit; }
 
-    // Ya no traemos "categoria" porque no existe en la BD
-    $sql = "SELECT id, nombre, unidad_medida FROM insumos WHERE nombre LIKE '%$busqueda%' LIMIT 5";
+    // Traemos el stock actual del centro usando LEFT JOIN con inventario
+    $sql = "SELECT i.id, i.nombre, i.unidad_medida, IFNULL(inv.cantidad, 0) as stock_actual 
+            FROM insumos i 
+            LEFT JOIN inventario inv ON i.id = inv.insumo_id AND inv.centro_id = $centro_usuario
+            WHERE i.nombre LIKE '%$busqueda%' LIMIT 5";
+            
     $resultado = $conn->query($sql);
     
     $datos = [];
-    while ($row = $resultado->fetch_assoc()) { $datos[] = $row; }
+    while ($row = $resultado->fetch_assoc()) { 
+        $datos[] = $row; 
+    }
     echo json_encode($datos);
     $conn->close();
     exit;
@@ -129,10 +135,10 @@ include('header.php');
 
 <div class="max-w-4xl mx-auto py-6 px-4 sm:px-6" 
      x-data="{
-        filas: [ { id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', sugerencias: [], mostrarLista: false } ],
+        filas: [ { id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', stock: 0, sugerencias: [], mostrarLista: false } ],
         
         añadirFila() {
-            this.filas.push({ id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', sugerencias: [], mostrarLista: false });
+            this.filas.push({ id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', stock: 0, sugerencias: [], mostrarLista: false });
         },
         eliminarFila(index) {
             if(this.filas.length > 1) this.filas.splice(index, 1);
@@ -160,6 +166,7 @@ include('header.php');
         seleccionarSugerencia(fila, sugerencia) {
             fila.nombre = sugerencia.nombre;
             fila.unidad_medida = sugerencia.unidad_medida;
+            fila.stock = sugerencia.stock_actual; // Almacenamos el stock
             fila.existe = true;
             fila.mostrarLista = false;
         }
@@ -272,6 +279,12 @@ include('header.php');
                                      :class="fila.existe ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'">
                                     <span x-text="fila.existe ? 'Stock Existente' : 'Nuevo Insumo'"></span>
                                 </div>
+                                
+                                <template x-if="fila.existe">
+                                    <div class="md:col-span-12 mt-1 text-[11px] font-bold text-amber-700 px-1">
+                                        ℹ️ Stock actual en sede: <span x-text="fila.stock"></span> <span x-text="fila.unidad_medida"></span>
+                                    </div>
+                                </template>
 
                             </div>
                         </template>
