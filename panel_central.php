@@ -23,6 +23,39 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sede Central - Inventario</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        .dataTables_wrapper .dataTables_filter input {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.5rem !important;
+            padding: 0.4rem 0.8rem !important;
+            font-size: 0.75rem !important;
+            margin-left: 0.5rem !important;
+        }
+        .dataTables_wrapper .dataTables_length select {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.5rem !important;
+            padding: 0.3rem 1.5rem 0.3rem 0.5rem !important;
+            font-size: 0.75rem !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #0f172a !important;
+            color: white !important;
+            border-radius: 0.5rem !important;
+            border: none !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+            border-radius: 0.5rem !important;
+        }
+        table.dataTable  {
+            border-collapse: collapse !important;
+        }
+    </style>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans">
 
@@ -54,8 +87,13 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
                 </div>
             <?php else: ?>
                 
+                <div class="block md:hidden mb-4">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">🔍 Buscar Insumo:</label>
+                    <input type="text" id="buscar-movil-inventario" placeholder="Escribe el nombre del artículo..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
+                </div>
+
                 <div class="hidden md:block overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse">
+                    <table id="tabla-inventario" class="w-full text-left text-sm border-collapse display">
                         <thead>
                             <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider">
                                 <th class="p-3">ID</th>
@@ -83,13 +121,15 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
                     </table>
                 </div>
 
-                <div class="grid grid-cols-1 gap-3 md:hidden">
+                <div id="contenedor-movil-inventario" class="grid grid-cols-1 gap-3 md:hidden">
                     <?php 
                     // Reseteamos el puntero para volver a iterar sobre los registros en la vista móvil
                     $inventario_actual->data_seek(0); 
                     while($row = $inventario_actual->fetch_assoc()): 
                     ?>
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">
+                        <div class="tarjeta-movil-stock bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2"
+                             data-search="<?php echo strtolower(htmlspecialchars($row['id'] . " " . $row['nombre'])); ?>">
+                            
                             <div class="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
                                 <span class="font-mono text-xs text-slate-400">ID #<?php echo $row['id']; ?></span>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-green-100 text-green-800 tracking-wide">Disponible</span>
@@ -119,11 +159,78 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
                     <?php endwhile; ?>
                 </div>
 
+                <div class="flex md:hidden items-center justify-between mt-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <button id="prev-movil-inventario" class="px-3 py-1.5 text-xs font-bold bg-white border border-slate-300 text-slate-700 rounded-lg shadow-2xs disabled:opacity-50">Ant.</button>
+                    <span id="info-movil-inventario" class="text-xs font-semibold text-slate-500">Pág. 1</span>
+                    <button id="next-movil-inventario" class="px-3 py-1.5 text-xs font-bold bg-white border border-slate-300 text-slate-700 rounded-lg shadow-2xs disabled:opacity-50">Sig.</button>
+                </div>
+
             <?php endif; ?>
         </div>
 
     </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // 1. Inicializar la tabla de escritorio con paginación base a 10 elementos
+        $('#tabla-inventario').DataTable({
+            "pageLength": 10,
+            "lengthMenu": [5, 10, 25, 50],
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ insumos por página",
+                "zeroRecords": "No se encontraron insumos coincidentes",
+                "info": "Mostrando página _PAGE_ de _PAGES_",
+                "infoEmpty": "No hay stock registrado",
+                "infoFiltered": "(filtrado de un total de _MAX_ registros)",
+                "search": "🔍 Buscar:",
+                "paginate": { "first": "Primero", "last": "Último", "next": "Sig.", "previous": "Ant." }
+            },
+            "order": [[1, "asc"]] // Ordenar alfabéticamente por nombre de insumo
+        });
+
+        // 2. Lógica interna para la paginación y búsqueda reactiva en celulares
+        function inicializarMotorMovil() {
+            let paginaActual = 1;
+            const tarjetasPorPagina = 10; // Límite exacto de 10 tarjetas por hoja
+
+            function renderizarMovil() {
+                let filtro = $('#buscar-movil-inventario').val().toLowerCase();
+                let tarjetasFiltradas = $('.tarjeta-movil-stock').filter(function() {
+                    return $(this).attr('data-search').includes(filtro);
+                });
+
+                let totalTarjetas = tarjetasFiltradas.length;
+                let totalPaginas = Math.ceil(totalTarjetas / tarjetasPorPagina) || 1;
+
+                if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+
+                // Ocultar bloque general
+                $('.tarjeta-movil-stock').addClass('hidden');
+
+                // Mapear límites de página y re-mostrar elementos indexados
+                let inicio = (paginaActual - 1) * tarjetasPorPagina;
+                let fin = inicio + tarjetasPorPagina;
+                tarjetasFiltradas.slice(inicio, fin).removeClass('hidden');
+
+                // Ajustar textos e interactividad de botones
+                $('#info-movil-inventario').text(`Pág. ${paginaActual} de ${totalPaginas}`);
+                $('#prev-movil-inventario').prop('disabled', paginaActual === 1);
+                $('#next-movil-inventario').prop('disabled', paginaActual === totalPaginas);
+            }
+
+            $('#prev-movil-inventario').click(function() { if (paginaActual > 1) { paginaActual--; renderizarMovil(); } });
+            $('#next-movil-inventario').click(function() { paginaActual++; renderizarMovil(); });
+            $('#buscar-movil-inventario').on('input', function() { paginaActual = 1; renderizarMovil(); });
+
+            renderizarMovil(); // Disparo inicial
+        }
+
+        inicializarMotorMovil();
+    });
+</script>
 
 </body>
 </html>

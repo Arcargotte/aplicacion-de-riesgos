@@ -62,66 +62,103 @@ include('header.php');
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Solicitud de Insumos - Centro de Acopio</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-        .solicitud-container { max-width: 650px; background: white; padding: 25px; margin: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .fila-insumo { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-        .fila-insumo input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        .btn-add { background: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; margin-bottom: 15px;}
-        .btn-remove { background: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px; }
-        .btn-submit { background: #007bff; color: white; border: none; padding: 10px 20px; width: 100%; cursor: pointer; border-radius: 4px; font-size: 16px; }
-        .meta-info { background: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body>
+<body class="bg-slate-100 min-h-screen font-sans">
 
-<div class="solicitud-container">
-    <h2>Nueva Solicitud de Insumos</h2>
+<div class="max-w-3xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
     
-    <div class="meta-info">
-        <strong>Responsable de la Solicitud:</strong> <?php echo $_SESSION['nombre']; ?> (Voluntario)<br>
-        <strong>Fecha:</strong> <?php echo date("Y-m-d H:i:s"); ?> (Automática)
+    <div class="mb-6 border-b border-slate-200 pb-4">
+        <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            📝 Nueva Solicitud de Insumos
+        </h2>
+        <p class="text-sm text-slate-500 font-medium">Requerimiento de carga dirigido a la Sede Central (Montalbán)</p>
     </div>
 
-    <form action="" method="POST">
-        <label style="font-weight: bold; display: block; margin-bottom: 10px;">Insumos Requeridos (Texto Libre):</label>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-8">
         
-        <button type="button" class="btn-add" onclick="agregarFila()">+ Añadir otro insumo</button>
-        
-        <div id="contenedor-insumos">
-            <div class="fila-insumo">
-                <input type="text" name="nombre_insumo[]" placeholder="Ej: Harina de maíz, Pañales G..." style="flex: 2;" required>
-                <input type="text" name="cantidad_insumo[]" placeholder="Ej: 50 cajas, 20 kg..." style="flex: 1;" required>
-                <button type="button" class="btn-remove" onclick="eliminarFila(this)">X</button>
+        <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm text-slate-600">
+            <div>
+                <span class="text-[10px] uppercase font-bold text-slate-400 block">Responsable emisor:</span>
+                <span class="font-bold text-slate-800">👤 <?php echo htmlspecialchars($_SESSION['nombre']); ?></span> 
+                <span class="text-slate-400 font-medium">(Voluntario)</span>
+            </div>
+            <div class="sm:text-right">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block">Fecha del registro:</span>
+                <span class="font-mono font-semibold text-slate-700">🕒 <?php echo date("d/m/Y g:i A"); ?></span>
             </div>
         </div>
 
-        <button type="submit" class="btn-submit" style="margin-top: 20px;">Enviar Solicitud a Sede Central</button>
-    </form>
+        <form action="" method="POST" class="space-y-6">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <label class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider">
+                    📋 Insumos Solicitados (Entrada Libre):
+                </label>
+                <button type="button" onclick="agregarFila()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                    ➕ Añadir Ítem
+                </button>
+            </div>
+            
+            <div id="contenedor-insumos" class="space-y-3">
+                <div class="fila-insumo flex items-center gap-2 bg-slate-50/50 p-2 rounded-xl border border-slate-200/40">
+                    <div class="flex-2">
+                        <input type="text" name="nombre_insumo[]" placeholder="Ej: Harina de maíz, Pañales G..." 
+                               class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400 focus:border-transparent transition" required>
+                    </div>
+                    <div class="flex-1">
+                        <input type="text" name="cantidad_insumo[]" placeholder="Ej: 50 cajas, 20 kg..." 
+                               class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400 focus:border-transparent transition" required>
+                    </div>
+                    <button type="button" onclick="eliminarFila(this)" 
+                            class="px-2.5 py-2 text-sm font-bold bg-white text-rose-600 border border-slate-200 hover:bg-rose-50 hover:border-rose-200 rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-200">
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:shadow-lg transform active:scale-[0.99] transition duration-150 cursor-pointer">
+                    🚀 Enviar Requerimiento a Sede Central
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
 function agregarFila() {
     const contenedor = document.getElementById('contenedor-insumos');
     const nuevaFila = document.createElement('div');
-    nuevaFila.className = 'fila-insumo';
+    nuevaFila.className = 'fila-insumo flex items-center gap-2 bg-slate-50/50 p-2 rounded-xl border border-slate-200/40 dynamic-row';
     
+    // Inyectamos la estructura limpia mapeando exactamente las clases de Tailwind de la fila base
     nuevaFila.innerHTML = `
-        <input type="text" name="nombre_insumo[]" placeholder="Ej: Insumo..." style="flex: 2;" required>
-        <input type="text" name="cantidad_insumo[]" placeholder="Ej: Cantidad..." style="flex: 1;" required>
-        <button type="button" class="btn-remove" onclick="eliminarFila(this)">X</button>
+        <div class="flex-2">
+            <input type="text" name="nombre_insumo[]" placeholder="Ej: Insumo..." 
+                   class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400 focus:border-transparent transition" required>
+        </div>
+        <div class="flex-1">
+            <input type="text" name="cantidad_insumo[]" placeholder="Ej: Cantidad..." 
+                   class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400 focus:border-transparent transition" required>
+        </div>
+        <button type="button" onclick="eliminarFila(this)" 
+                class="px-2.5 py-2 text-sm font-bold bg-white text-rose-600 border border-slate-200 hover:bg-rose-50 hover:border-rose-200 rounded-lg shadow-xs transition duration-150 cursor-pointer">
+            🗑️
+        </button>
     `;
     contenedor.appendChild(nuevaFila);
 }
 
 function eliminarFila(btn) {
     const filas = document.querySelectorAll('.fila-insumo');
-    // Evitar que borren la última fila obligatoria
+    // Evitar desmantelar la única fila obligatoria básica
     if(filas.length > 1) {
         btn.parentElement.remove();
     } else {
-        alert("Debes solicitar al menos un insumo.");
+        alert("⚠️ Operación inválida: Debes solicitar al menos un insumo en tu reporte.");
     }
 }
 </script>

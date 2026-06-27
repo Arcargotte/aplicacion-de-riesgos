@@ -39,6 +39,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                 <ul class="flex items-center gap-x-4 lg:gap-x-6 xl:gap-x-8 list-none m-0 p-0">
                     <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
                         <li><a href="panel_central.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">🏠 Panel</a></li>
+                        <li><a href="agregar_insumo.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">🏠 Agregar insumo</a></li>
                         <li><a href="formulario_donacion.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">🎁 Donación</a></li>
                         <li><a href="historico_donaciones.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">📜 Historial</a></li>
                         <li><a href="gestion_usuarios.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">👥 Personal</a></li>
@@ -96,6 +97,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
             <ul class="flex flex-col gap-1 list-none m-0 p-0">
                 <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
                     <li><a href="panel_central.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">🏠 Panel Central</a></li>
+                    <li><a href="agregar_insumo.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">🏠 Agregar insumo</a></li>
                     <li><a href="formulario_donacion.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">🎁 Registrar Donación</a></li>
                     <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">📜 Historial Entregas</a></li>
                     <li><a href="gestion_usuarios.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">👥 Gestionar Personal</a></li>
