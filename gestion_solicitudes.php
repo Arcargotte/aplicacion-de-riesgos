@@ -14,11 +14,11 @@ include('header.php');
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion'])) {
     $solicitud_id = intval($_POST['solicitud_id']);
     $accion = $_POST['accion']; // 'aprobar' o 'rechazar'
-    $responsable = $conn->real_escape_string($_SESSION['nombre']);
+    $responsable_id = intval($_SESSION['usuario_id']);
 
     $conn->begin_transaction();
     try {
-        // Obtener datos de la solicitud original
+        // Obtener datos de la solicitud original bloqueándola para lectura concurrente
         $res_sol = $conn->query("SELECT * FROM solicitudes WHERE id = $solicitud_id FOR UPDATE");
         $solicitud = $res_sol->fetch_assoc();
 
@@ -26,56 +26,84 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion'])) {
             throw new Exception("La solicitud no existe o ya fue procesada.");
         }
 
-        $centro_id = $solicitud['centro_id'];
+        $centro_destino_id = intval($solicitud['centro_id']);
+        $centro_origen_id = 1; // Sede Central
 
         if ($accion === 'aprobar') {
-            // 1. Cambiar estado de la solicitud
-            $conn->query("UPDATE solicitudes SET estado = 'aprobado' WHERE id = $solicitud_id");
-
-            // 2. Insertar cabecera en la tabla de entregas/donaciones
-            $detalle_adicional = "Donación aprobada desde Solicitud #" . $solicitud_id;
-            $conn->query("INSERT INTO entregas (tipo_receptor, centro_id, persona_id, detalle_adicional, responsable_entrega) 
-                            VALUES ('centro', $centro_id, NULL, '$detalle_adicional', '$responsable')");
-            $entrega_id = $conn->insert_id;
-
-            // 3. Mover los insumos solicitados al detalle de la entrega y descontar stock
-            $detalles = $conn->query("SELECT * FROM detalle_solicitudes WHERE solicitud_id = $solicitud_id");
-            while ($det = $detalles->fetch_assoc()) {
-                $nombre_insumo = $conn->real_escape_string($det['nombre_insumo']);
+            
+            // PASO 1: VERIFICACIÓN ESTRICTA DE STOCK PARA TODOS LOS INSUMOS
+            $detalles_solicitud = $conn->query("SELECT ds.insumo_id, ds.cantidad, i.nombre 
+                                                FROM detalle_solicitudes ds 
+                                                JOIN insumos i ON ds.insumo_id = i.id 
+                                                WHERE ds.solicitud_id = $solicitud_id");
+            
+            $items_a_procesar = [];
+            
+            while ($det = $detalles_solicitud->fetch_assoc()) {
+                $insumo_id = intval($det['insumo_id']);
                 $cantidad_pedida = floatval($det['cantidad']);
+                $nombre_insumo = $det['nombre'];
 
-                // Buscar si tenemos ese insumo disponible en la Sede Central
-                $res_ins = $conn->query("SELECT id, cantidad FROM insumos WHERE nombre = '$nombre_insumo' AND estado = 'disponible' FOR UPDATE");
+                // Buscar el stock en la Sede Central (centro_id = 1)
+                $res_inv = $conn->query("SELECT cantidad FROM inventario WHERE centro_id = $centro_origen_id AND insumo_id = $insumo_id FOR UPDATE");
                 
-                if ($res_ins->num_rows > 0) {
-                    $ins_data = $res_ins->fetch_assoc();
-                    $insumo_id = $ins_data['id'];
-                    $stock_actual = floatval($ins_data['cantidad']);
-
-                    if ($stock_actual >= $cantidad_pedida) {
-                        $nuevo_stock = $stock_actual - $cantidad_pedida;
-                        $nuevo_estado = ($nuevo_stock == 0) ? 'donado' : 'disponible';
-
-                        // Actualizar stock de sede central
-                        $conn->query("UPDATE insumos SET cantidad = $nuevo_stock, estado = '$nuevo_estado' WHERE id = $insumo_id");
-                        
-                        // Insertar en detalle de la entrega
-                        $conn->query("INSERT INTO detalle_entregas (entrega_id, insumo_id, cantidad_donada) VALUES ($entrega_id, $insumo_id, $cantidad_pedida)");
-                    } else {
-                        throw new Exception("Stock insuficiente en Sede Central para el insumo: " . $nombre_insumo);
+                if ($res_inv->num_rows > 0) {
+                    $row_inv = $res_inv->fetch_assoc();
+                    $stock_actual = floatval($row_inv['cantidad']);
+                    
+                    if ($stock_actual < $cantidad_pedida) {
+                        throw new Exception("No hay suficiente stock en Sede Central para: " . $nombre_insumo);
                     }
                 } else {
-                    throw new Exception("No se encontró ningún lote disponible con el nombre: " . $nombre_insumo);
+                    throw new Exception("No hay suficiente stock (No existe registro en inventario central) para: " . $nombre_insumo);
                 }
+                
+                // Si pasa la validación, lo guardamos para procesarlo en el siguiente paso
+                $items_a_procesar[] = [
+                    'id' => $insumo_id,
+                    'cantidad' => $cantidad_pedida
+                ];
             }
-            $msg = "✅ Solicitud #$solicitud_id aprobada y convertida en donación con éxito.";
+
+            // PASO 2: TODO EL STOCK ES VÁLIDO -> PROCEDEMOS A DESCONTAR Y TRANSFERIR
+            
+            // 2.1 Cambiar estado de la solicitud
+            $conn->query("UPDATE solicitudes SET estado = 'aprobado' WHERE id = $solicitud_id");
+
+            // 2.2 Insertar el registro principal en `movimientos`
+            $detalles_mov = "Donación / Traslado por aprobación de Solicitud #" . $solicitud_id;
+            $conn->query("INSERT INTO movimientos (tipo_movimiento, centro_origen_id, centro_destino_id, usuario_id, detalles) 
+                          VALUES ('Traslado a centro', $centro_origen_id, $centro_destino_id, $responsable_id, '$detalles_mov')");
+            $movimiento_id = $conn->insert_id;
+
+            // 2.3 Procesar cada item (Descontar, Sumar al destino, Guardar detalle_movimiento)
+            foreach ($items_a_procesar as $item) {
+                $id_ins = $item['id'];
+                $cant = $item['cantidad'];
+
+                // Descontar de Sede Central
+                $conn->query("UPDATE inventario SET cantidad = cantidad - $cant WHERE centro_id = $centro_origen_id AND insumo_id = $id_ins");
+                
+                // Sumar al Centro Destino (Crear el registro si no existe en su inventario)
+                $check_dest = $conn->query("SELECT id FROM inventario WHERE centro_id = $centro_destino_id AND insumo_id = $id_ins");
+                if ($check_dest->num_rows > 0) {
+                    $conn->query("UPDATE inventario SET cantidad = cantidad + $cant WHERE centro_id = $centro_destino_id AND insumo_id = $id_ins");
+                } else {
+                    $conn->query("INSERT INTO inventario (centro_id, insumo_id, cantidad) VALUES ($centro_destino_id, $id_ins, $cant)");
+                }
+
+                // Registrar en detalle_movimiento
+                $conn->query("INSERT INTO detalles_movimiento (movimiento_id, insumo_id, cantidad) VALUES ($movimiento_id, $id_ins, $cant)");
+            }
+            
+            $msg = "✅ Solicitud #$solicitud_id aprobada. Insumos descontados y transferidos exitosamente.";
 
         } else if ($accion === 'rechazar') {
-            $justificacion = $conn->real_escape_string($_POST['justificacion']);
+            $justificacion = $conn->real_escape_string(trim($_POST['justificacion']));
             if (empty($justificacion)) {
                 throw new Exception("Es obligatorio indicar una justificación para el rechazo.");
             }
-            // Cambiar estado e insertar motivo (Asumiendo que tu tabla solicitudes tiene la columna justificacion_rechazo)
+            // Cambiar estado e insertar motivo de rechazo
             $conn->query("UPDATE solicitudes SET estado = 'rechazado', motivo_rechazo = '$justificacion' WHERE id = $solicitud_id");
             $msg = "❌ Solicitud #$solicitud_id rechazada correctamente.";
         }
@@ -92,12 +120,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion'])) {
 }
 
 // 3. CONSULTA DE SOLICITUDES PENDIENTES
-$solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c.ubicacion AS centro_ubicacion, u.nombre AS voluntario_nombre 
+// Adaptación: Usamos c.direccion en lugar de c.ubicacion según el nuevo esquema
+$solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c.direccion AS centro_ubicacion, u.nombre AS voluntario_nombre 
                                         FROM solicitudes s
                                         JOIN centros_acopio c ON s.centro_id = c.id
                                         JOIN usuarios u ON s.usuario_id = u.id
                                         WHERE s.estado = 'pendiente'
-                                        ORDER BY s.fecha_hora DESC");
+                                        ORDER BY s.fecha_hora ASC");
 ?>
 
 <!DOCTYPE html>
@@ -106,7 +135,7 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sede Central - Gestión de Solicitudes</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <style>
         .dataTables_wrapper .dataTables_filter input { background-color: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 0.5rem !important; padding: 0.4rem 0.8rem !important; font-size: 0.75rem !important; margin-left: 0.5rem !important; }
@@ -137,7 +166,7 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
 
             <div class="block md:hidden mb-4">
                 <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">🔍 Buscar Solicitud:</label>
-                <input type="text" id="buscar-movil-solicitudes" placeholder="Escribe el nombre del centro o voluntario..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-hidden">
+                <input type="text" id="buscar-movil-solicitudes" placeholder="Escribe el nombre del centro o voluntario..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none">
             </div>
 
             <div class="hidden md:block overflow-x-auto">
@@ -165,22 +194,26 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
                                     <ul class="list-disc list-inside space-y-0.5">
                                         <?php 
                                         $sid = $row['id'];
-                                        $detalles = $conn->query("SELECT * FROM detalle_solicitudes WHERE solicitud_id = $sid");
+                                        // ADAPTACIÓN: JOIN con tabla insumos para obtener nombre y unidad de medida
+                                        $detalles = $conn->query("SELECT d.cantidad, i.nombre, i.unidad_medida 
+                                                                  FROM detalle_solicitudes d 
+                                                                  JOIN insumos i ON d.insumo_id = i.id 
+                                                                  WHERE d.solicitud_id = $sid");
                                         while($d = $detalles->fetch_assoc()):
                                         ?>
-                                            <li><strong><?php echo htmlspecialchars($d['nombre_insumo']); ?></strong> (<?php echo htmlspecialchars($d['cantidad']); ?>)</li>
+                                            <li><strong><?php echo htmlspecialchars($d['nombre']); ?></strong> (<?php echo floatval($d['cantidad']) . ' ' . htmlspecialchars($d['unidad_medida']); ?>)</li>
                                         <?php endwhile; ?>
                                     </ul>
                                 </td>
                                 <td class="p-3 text-xs text-slate-500"><?php echo date('d/m/Y g:i A', strtotime($row['fecha_hora'])); ?></td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <form action="" method="POST" onsubmit="return confirm('¿Aprobar esta solicitud? Se descontará del stock central.');">
+                                        <form action="" method="POST" onsubmit="return confirm('¿Aprobar esta solicitud? Se descontará del stock central y se enviará al centro solicitante.');">
                                             <input type="hidden" name="solicitud_id" value="<?php echo $row['id']; ?>">
                                             <input type="hidden" name="accion" value="aprobar">
-                                            <button type="submit" class="px-2.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 shadow-xs cursor-pointer">Aceptar</button>
+                                            <button type="submit" class="px-2.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 shadow-sm cursor-pointer">Aceptar</button>
                                         </form>
-                                        <button onclick="abrirModalRechazo(<?php echo $row['id']; ?>)" class="px-2.5 py-1.5 bg-rose-600 text-white font-bold text-xs rounded-lg hover:bg-rose-700 shadow-xs cursor-pointer">Rechazar</button>
+                                        <button type="button" onclick="abrirModalRechazo(<?php echo $row['id']; ?>)" class="px-2.5 py-1.5 bg-rose-600 text-white font-bold text-xs rounded-lg hover:bg-rose-700 shadow-sm cursor-pointer">Rechazar</button>
                                     </div>
                                 </td>
                             </tr>
@@ -194,7 +227,7 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
                 $solicitudes_pendientes->data_seek(0); 
                 while($row = $solicitudes_pendientes->fetch_assoc()): 
                 ?>
-                    <div class="tarjeta-movil-solicitud bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-3"
+                    <div class="tarjeta-movil-solicitud bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3"
                          data-search="<?php echo strtolower(htmlspecialchars($row['centro_nombre'] . " " . $row['voluntario_nombre'])); ?>">
                         
                         <div class="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
@@ -213,10 +246,10 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
                             <ul class="list-disc list-inside space-y-1">
                                 <?php 
                                 $sid = $row['id'];
-                                $detalles = $conn->query("SELECT * FROM detalle_solicitudes WHERE solicitud_id = $sid");
+                                $detalles = $conn->query("SELECT d.cantidad, i.nombre, i.unidad_medida FROM detalle_solicitudes d JOIN insumos i ON d.insumo_id = i.id WHERE d.solicitud_id = $sid");
                                 while($d = $detalles->fetch_assoc()):
                                 ?>
-                                    <li><strong><?php echo htmlspecialchars($d['nombre_insumo']); ?></strong> (<?php echo htmlspecialchars($d['cantidad']); ?>)</li>
+                                    <li><strong><?php echo htmlspecialchars($d['nombre']); ?></strong> (<?php echo floatval($d['cantidad']) . ' ' . htmlspecialchars($d['unidad_medida']); ?>)</li>
                                 <?php endwhile; ?>
                             </ul>
                         </div>
@@ -229,9 +262,9 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
                             <form action="" method="POST" onsubmit="return confirm('¿Aprobar esta solicitud?');">
                                 <input type="hidden" name="solicitud_id" value="<?php echo $row['id']; ?>">
                                 <input type="hidden" name="accion" value="aprobar">
-                                <button type="submit" class="w-full py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs">Aceptar</button>
+                                <button type="submit" class="w-full py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm">Aceptar</button>
                             </form>
-                            <button onclick="abrirModalRechazo(<?php echo $row['id']; ?>)" class="w-full py-2 bg-rose-600 text-white font-bold text-xs rounded-xl shadow-xs">Rechazar</button>
+                            <button type="button" onclick="abrirModalRechazo(<?php echo $row['id']; ?>)" class="w-full py-2 bg-rose-600 text-white font-bold text-xs rounded-xl shadow-sm">Rechazar</button>
                         </div>
                     </div>
                 <?php endwhile; ?>
@@ -247,8 +280,8 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
     </div>
 </div>
 
-<div id="modal-rechazo" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-xl space-y-4 animate-in fade-in zoom-in duration-150">
+<div id="modal-rechazo" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-xl space-y-4">
         <div>
             <h3 class="text-base font-black text-slate-900 uppercase tracking-wide">❌ Rechazar Solicitud</h3>
             <p class="text-xs text-slate-500">Especifica los motivos obligatorios del rechazo para notificar al voluntario.</p>
@@ -258,12 +291,12 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
             <input type="hidden" name="accion" value="rechazar">
             <div class="space-y-1">
                 <label class="text-xs font-bold text-slate-600">Justificación del rechazo:</label>
-                <textarea name="justificacion" id="modal-justificacion" rows="3" required placeholder="Ej: No contamos con suficiente stock en almacén central o el insumo no coincide con la unidad de medida..."
-                          class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400"></textarea>
+                <textarea name="justificacion" id="modal-justificacion" rows="3" required placeholder="Ej: No hay stock suficiente del insumo..."
+                          class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"></textarea>
             </div>
             <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button type="button" onclick="cerrarModalRechazo()" class="px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-lg transition">Cancelar</button>
-                <button type="submit" class="px-3 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm transition">Confirmar Rechazo</button>
+                <button type="submit" class="px-3 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm transition cursor-pointer">Confirmar Rechazo</button>
             </div>
         </form>
     </div>
@@ -284,7 +317,7 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
                 "search": "🔍 Buscar:",
                 "paginate": { "next": "Sig.", "previous": "Ant." }
             },
-            "order": [[0, "desc"]]
+            "order": [[0, "asc"]] // Mostramos las más antiguas primero para despachar por orden de llegada
         });
 
         // Motor de paginación móvil
@@ -326,7 +359,6 @@ $solicitudes_pendientes = $conn->query("SELECT s.*, c.nombre AS centro_nombre, c
         }
     });
 
-    // Controladores del Modal interactivo de rechazo
     function abrirModalRechazo(id) {
         document.getElementById('modal-solicitud-id').value = id;
         document.getElementById('modal-justificacion').value = '';
