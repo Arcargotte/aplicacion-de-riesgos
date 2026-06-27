@@ -3,7 +3,7 @@
 $db_host = "localhost";
 $db_user = "root";
 $db_pass = "";
-$db_name = "ong_inventario";
+$db_name = "ong_bd";
 
 // Habilitar reporte de errores estricto para Mysqli (Previene fallos silenciosos)
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);

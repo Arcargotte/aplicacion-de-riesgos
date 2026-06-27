@@ -1,18 +1,90 @@
 <?php
 session_start();
-// Control estricto: Solo administradores de la sede central entran aquí
-if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_central') {
+if (!isset($_SESSION['usuario_id'])) {
     header("Location: login.php");
     exit;
 }
 
-// Incluimos el navbar
 include('header.php');
-
 require_once('conexion.php');
 
-// Consulta requerida: Solo insumos disponibles
-$inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponible' ORDER BY fecha_ingreso DESC");
+/*
+|--------------------------------------------------------------------------
+| Centro del usuario
+|--------------------------------------------------------------------------
+*/
+
+if (!isset($_SESSION['centro_id'])) {
+    die("No se encontró el centro asociado al usuario.");
+}
+
+$centro_id = intval($_SESSION['centro_id']);
+
+/*
+|--------------------------------------------------------------------------
+| Obtener información del centro
+|--------------------------------------------------------------------------
+*/
+
+$stmt = $conn->prepare("
+    SELECT
+        id,
+        nombre,
+        es_sede_principal
+    FROM centros_acopio
+    WHERE id = ?
+");
+
+$stmt->bind_param("i", $centro_id);
+$stmt->execute();
+
+$centro = $stmt->get_result()->fetch_assoc();
+
+if (!$centro) {
+    die("Centro no encontrado.");
+}
+
+if ($centro['es_sede_principal']) {
+    $titulo_sede = "Sede Central (Montalbán)";
+} else {
+    $titulo_sede = "Inventario: " . htmlspecialchars($centro['nombre']);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Inventario del centro
+|--------------------------------------------------------------------------
+*/
+
+$stmt = $conn->prepare("
+    SELECT
+
+        i.id,
+
+        i.nombre,
+
+        i.unidad_medida,
+
+        inv.cantidad,
+
+        inv.ultima_actualizacion
+
+    FROM inventario inv
+
+    INNER JOIN insumos i
+        ON i.id = inv.insumo_id
+
+    WHERE inv.centro_id = ?
+      AND inv.cantidad > 0
+
+    ORDER BY i.nombre
+");
+
+$stmt->bind_param("i", $centro_id);
+
+$stmt->execute();
+
+$inventario_actual = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -60,11 +132,12 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
 
 <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
 
-
     <div class="mb-6 border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Insumos Sede Central Montalbán</h2>
-            <p class="text-sm text-slate-500 font-medium">Panel General de Control de Inventario </p>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                <?php echo $titulo_sede; ?>
+            </h2>
+            <p class="text-sm text-slate-500 font-medium">Panel General de Control de Inventario</p>
         </div>
         <a href="agregar_insumo.php" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition text-center shadow-md shadow-sky-600/10">
         Agregar Insumo
@@ -110,7 +183,7 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
                                 <th class="p-3">Cantidad Disponible</th>
                                 <th class="p-3">Unidad</th>
                                 <th class="p-3">Estado</th>
-                                <th class="p-3">Fecha Ingreso</th>
+                                <th class="p-3">Última Actualización</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
@@ -123,7 +196,7 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
                                     <td class="p-3">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Disponible</span>
                                     </td>
-                                    <td class="p-3 text-xs text-slate-500"><?php echo date('d/m/Y g:i A', strtotime($row['fecha_ingreso'])); ?></td>
+                                    <td class="p-3 text-xs text-slate-500"><?php echo date('d/m/Y g:i A', strtotime($row['ultima_actualizacion'])); ?></td>
                                 </tr>
                             <?php endwhile; ?>
                         </tbody>
@@ -161,8 +234,8 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
                             </div>
 
                             <div class="text-[11px] text-slate-400 mt-1.5 flex justify-between border-t border-slate-200/40 pt-1.5">
-                                <span>Ingreso:</span>
-                                <span class="font-medium text-slate-600"><?php echo date('d/m/Y h:i A', strtotime($row['fecha_ingreso'])); ?></span>
+                                <span>Actualizado:</span>
+                                <span class="font-medium text-slate-600"><?php echo date('d/m/Y h:i A', strtotime($row['ultima_actualizacion'])); ?></span>
                             </div>
                         </div>
                     <?php endwhile; ?>
@@ -207,7 +280,7 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
         // 2. Lógica interna para la paginación y búsqueda reactiva en celulares
         function inicializarMotorMovil() {
             let paginaActual = 1;
-            const tarjetasPorPagina = 10; // Límite exacto de 10 tarjetas por hoja
+            const tarjetasPorPagina = 10; 
 
             function renderizarMovil() {
                 let filtro = $('#buscar-movil-inventario').val().toLowerCase();
@@ -220,15 +293,12 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
 
                 if (paginaActual > totalPaginas) paginaActual = totalPaginas;
 
-                // Ocultar bloque general
                 $('.tarjeta-movil-stock').addClass('hidden');
 
-                // Mapear límites de página y re-mostrar elementos indexados
                 let inicio = (paginaActual - 1) * tarjetasPorPagina;
                 let fin = inicio + tarjetasPorPagina;
                 tarjetasFiltradas.slice(inicio, fin).removeClass('hidden');
 
-                // Ajustar textos e interactividad de botones
                 $('#info-movil-inventario').text(`Pág. ${paginaActual} de ${totalPaginas}`);
                 $('#prev-movil-inventario').prop('disabled', paginaActual === 1);
                 $('#next-movil-inventario').prop('disabled', paginaActual === totalPaginas);
@@ -238,7 +308,7 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
             $('#next-movil-inventario').click(function() { paginaActual++; renderizarMovil(); });
             $('#buscar-movil-inventario').on('input', function() { paginaActual = 1; renderizarMovil(); });
 
-            renderizarMovil(); // Disparo inicial
+            renderizarMovil(); 
         }
 
         inicializarMotorMovil();

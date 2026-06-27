@@ -1,59 +1,91 @@
 <?php
 session_start();
 
-// Si ya está logueado, redirigir según su rol
+require_once('conexion.php');
+
 if (isset($_SESSION['usuario_id'])) {
-    if ($_SESSION['rol'] === 'administrador_central') {
+
+    if ($_SESSION['rol_id'] == 1) {
         header("Location: panel_central.php");
     } else {
         header("Location: formulario_solicitud.php");
     }
+
     exit;
 }
 
 $error = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Conexión nativa a MariaDB
-    require_once('conexion.php');
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $username = $conn->real_escape_string($_POST['username']);
-    $password = $_POST['password'];
+    $usuario = trim($_POST['username']);
+    $clave   = $_POST['password'];
 
-    // Buscar usuario y su rol
-    $sql = "SELECT u.*, r.nombre as rol_nombre FROM usuarios u 
-            JOIN roles r ON u.rol_id = r.id 
-            WHERE u.username = '$username'";
-    
-    $result = $conn->query($sql);
+    $stmt = $conn->prepare("
+        SELECT
 
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        
-        // Verificar contraseña con el hash de la base de datos
-        if (password_verify($password, $user['password'])) {
-            // Guardar datos en sesión
+            u.id,
+            u.nombre,
+            u.usuario,
+            u.clave,
+            u.rol_id,
+            u.centro_id,
+
+            r.nombre AS rol_nombre
+
+        FROM usuarios u
+
+        INNER JOIN roles r
+            ON r.id = u.rol_id
+
+        WHERE u.usuario = ?
+          AND u.activo = 1
+
+        LIMIT 1
+    ");
+
+    $stmt->bind_param("s", $usuario);
+
+    $stmt->execute();
+
+    $resultado = $stmt->get_result();
+
+    if ($resultado->num_rows == 1) {
+
+        $user = $resultado->fetch_assoc();
+
+        if (password_verify($clave, $user['clave'])) {
+
+            session_regenerate_id(true);
+
             $_SESSION['usuario_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['nombre'] = $user['nombre'];
-            $_SESSION['rol'] = $user['rol_nombre'];
-            $_SESSION['centro_id'] = $user['centro_id'];
+            $_SESSION['nombre']     = $user['nombre'];
+            $_SESSION['usuario']    = $user['usuario'];
 
-            // Redirección según rol
-            if ($user['rol_nombre'] === 'administrador_central') {
+            $_SESSION['rol_id']     = $user['rol_id'];
+            $_SESSION['rol']        = $user['rol_nombre'];
+
+            $_SESSION['centro_id']  = $user['centro_id'];
+
+            if ($user['rol_id'] == 1) {
                 header("Location: panel_central.php");
             } else {
                 header("Location: formulario_solicitud.php");
             }
+
             exit;
-        } else {
-            $error = "Contraseña incorrecta.";
         }
+
+        $error = "Contraseña incorrecta.";
     } else {
+
         $error = "El usuario no existe.";
     }
-    $conn->close();
+
+    $stmt->close();
 }
+
+$conn->close();
 ?>
 
 <!DOCTYPE html>

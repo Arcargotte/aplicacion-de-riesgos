@@ -43,8 +43,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_editar'])) {
     $id_editar = intval($_POST['usuario_id']);
     $nombre = $conn->real_escape_string(trim($_POST['nombre']));
     $rol_id = intval($_POST['rol_id']);
-    $centro_id = ($rol_id == 1) ? "NULL" : intval($_POST['centro_id']);
-    $password = trim($_POST['password']);
+    // ADAPTACIÓN: La nueva BD no permite NULL en centro_id. 
+    // Si es admin central (1), lo asignamos por defecto a la Sede Central (1).
+    $centro_id = ($rol_id == 1) ? 1 : intval($_POST['centro_id']);
+    $password = trim($_POST['password']); // input name='password'
 
     if (empty($nombre) || empty($rol_id)) {
         $mensaje = "⚠️ El nombre y el rol son campos obligatorios.";
@@ -52,9 +54,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_editar'])) {
     } else {
         $conn->begin_transaction();
         try {
+            // ADAPTACIÓN: La columna en la DB para la contraseña ahora se llama 'clave'
             if (!empty($password)) {
                 $password_hashed = password_hash($password, PASSWORD_BCRYPT);
-                $sql_update = "UPDATE usuarios SET nombre = '$nombre', rol_id = $rol_id, centro_id = $centro_id, password = '$password_hashed' WHERE id = $id_editar";
+                $sql_update = "UPDATE usuarios SET nombre = '$nombre', rol_id = $rol_id, centro_id = $centro_id, clave = '$password_hashed' WHERE id = $id_editar";
             } else {
                 $sql_update = "UPDATE usuarios SET nombre = '$nombre', rol_id = $rol_id, centro_id = $centro_id WHERE id = $id_editar";
             }
@@ -81,13 +84,13 @@ try {
     $centros_db = [];
     while($c = $centros_query->fetch_assoc()) { $centros_db[] = $c; }
 
-    // 4. CONSULTA ESTRUCTURADA: Traer todos los usuarios con sus respectivas sedes y roles
-    $sql_usuarios = "SELECT u.id, u.username, u.nombre, u.rol_id, u.centro_id, 
+    // 4. CONSULTA ESTRUCTURADA: ADAPTACIÓN u.username -> u.usuario, y uso de JOIN directo porque centro_id es NOT NULL
+    $sql_usuarios = "SELECT u.id, u.usuario, u.nombre, u.rol_id, u.centro_id, 
                             r.nombre AS rol_nombre, 
-                            COALESCE(c.nombre, 'Sede Central (Montalbán)') AS sede_nombre 
+                            c.nombre AS sede_nombre 
                      FROM usuarios u
                      JOIN roles r ON u.rol_id = r.id
-                     LEFT JOIN centros_acopio c ON u.centro_id = c.id
+                     JOIN centros_acopio c ON u.centro_id = c.id
                      ORDER BY u.centro_id ASC, u.nombre ASC";
     $resultado_usuarios = $conn->query($sql_usuarios);
 } catch (Exception $e) {
@@ -104,8 +107,8 @@ while($user = $resultado_usuarios->fetch_assoc()) {
      x-data="{ 
         modalEditar: false, 
         modalEliminar: false,
-        userEdit: {id: '', nombre: '', username: '', rol_id: '', centro_id: ''},
-        userDelete: {id: '', nombre: '', username: ''}
+        userEdit: {id: '', nombre: '', usuario: '', rol_id: '', centro_id: ''},
+        userDelete: {id: '', nombre: '', usuario: ''}
      }">
     
     <div class="mb-6 border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -154,18 +157,18 @@ while($user = $resultado_usuarios->fetch_assoc()) {
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="p-4 font-mono text-xs text-slate-400">#<?php echo $u['id']; ?></td>
                                     <td class="p-4 font-bold text-slate-900"><?php echo htmlspecialchars($u['nombre']); ?></td>
-                                    <td class="p-4 font-mono text-xs bg-slate-50/80 rounded px-2 py-1 max-w-fit border border-slate-100"><?php echo htmlspecialchars($u['username']); ?></td>
+                                    <td class="p-4 font-mono text-xs bg-slate-50/80 rounded px-2 py-1 max-w-fit border border-slate-100"><?php echo htmlspecialchars($u['usuario']); ?></td>
                                     <td class="p-4">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold <?php echo $u['rol_id'] == 1 ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-amber-50 text-amber-700 border border-amber-200'; ?>">
                                             <?php echo str_replace('_', ' ', $u['rol_nombre']); ?>
                                         </span>
                                     </td>
                                     <td class="p-4 text-right space-x-2">
-                                        <button @click="userEdit = {id: '<?php echo $u['id']; ?>', nombre: '<?php echo htmlspecialchars($u['nombre'], ENT_QUOTES); ?>', username: '<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>', rol_id: '<?php echo $u['rol_id']; ?>', centro_id: '<?php echo $u['centro_id'] ?? ''; ?>'}; modalEditar = true;" 
+                                        <button @click="userEdit = {id: '<?php echo $u['id']; ?>', nombre: '<?php echo htmlspecialchars($u['nombre'], ENT_QUOTES); ?>', usuario: '<?php echo htmlspecialchars($u['usuario'], ENT_QUOTES); ?>', rol_id: '<?php echo $u['rol_id']; ?>', centro_id: '<?php echo $u['centro_id']; ?>'}; modalEditar = true;" 
                                                 class="text-xs bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 font-bold py-1.5 px-3 rounded-lg transition cursor-pointer">
                                             ✏️ Editar
                                         </button>
-                                        <button @click="userDelete = {id: '<?php echo $u['id']; ?>', nombre: '<?php echo htmlspecialchars($u['nombre'], ENT_QUOTES); ?>', username: '<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>'}; modalEliminar = true;" 
+                                        <button @click="userDelete = {id: '<?php echo $u['id']; ?>', nombre: '<?php echo htmlspecialchars($u['nombre'], ENT_QUOTES); ?>', usuario: '<?php echo htmlspecialchars($u['usuario'], ENT_QUOTES); ?>'}; modalEliminar = true;" 
                                                 class="text-xs bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-600 font-bold py-1.5 px-3 rounded-lg transition cursor-pointer">
                                             🗑️ Eliminar
                                         </button>
@@ -191,14 +194,14 @@ while($user = $resultado_usuarios->fetch_assoc()) {
                             </div>
                             <div>
                                 <div class="text-[10px] text-slate-400 uppercase font-black">Usuario</div>
-                                <div class="text-sm font-mono text-slate-600"><?php echo htmlspecialchars($u['username']); ?></div>
+                                <div class="text-sm font-mono text-slate-600"><?php echo htmlspecialchars($u['usuario']); ?></div>
                             </div>
                             <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-200/40">
-                                <button @click="userEdit = {id: '<?php echo $u['id']; ?>', nombre: '<?php echo htmlspecialchars($u['nombre'], ENT_QUOTES); ?>', username: '<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>', rol_id: '<?php echo $u['rol_id']; ?>', centro_id: '<?php echo $u['centro_id'] ?? ''; ?>'}; modalEditar = true;"
+                                <button @click="userEdit = {id: '<?php echo $u['id']; ?>', nombre: '<?php echo htmlspecialchars($u['nombre'], ENT_QUOTES); ?>', usuario: '<?php echo htmlspecialchars($u['usuario'], ENT_QUOTES); ?>', rol_id: '<?php echo $u['rol_id']; ?>', centro_id: '<?php echo $u['centro_id']; ?>'}; modalEditar = true;"
                                         class="w-full text-center bg-white border border-slate-200 text-slate-700 font-bold py-2.5 rounded-lg text-xs hover:bg-slate-100 transition cursor-pointer">
                                     ✏️ Modificar
                                 </button>
-                                <button @click="userDelete = {id: '<?php echo $u['id']; ?>', nombre: '<?php echo htmlspecialchars($u['nombre'], ENT_QUOTES); ?>', username: '<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>'}; modalEliminar = true;"
+                                <button @click="userDelete = {id: '<?php echo $u['id']; ?>', nombre: '<?php echo htmlspecialchars($u['nombre'], ENT_QUOTES); ?>', usuario: '<?php echo htmlspecialchars($u['usuario'], ENT_QUOTES); ?>'}; modalEliminar = true;"
                                         class="w-full text-center bg-white border border-rose-200 text-rose-600 font-bold py-2.5 rounded-lg text-xs hover:bg-rose-50 transition cursor-pointer">
                                     🗑️ Eliminar
                                 </button>
@@ -219,7 +222,7 @@ while($user = $resultado_usuarios->fetch_assoc()) {
                  x-show="modalEditar" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100">
                 
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                    <h3 class="text-lg font-black text-slate-900">Modificar Cuenta: <span class="text-sky-600 font-mono" x-text="'@' + userEdit.username"></span></h3>
+                    <h3 class="text-lg font-black text-slate-900">Modificar Cuenta: <span class="text-sky-600 font-mono" x-text="'@' + userEdit.usuario"></span></h3>
                     <button @click="modalEditar = false" class="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">&times;</button>
                 </div>
 
@@ -283,7 +286,7 @@ while($user = $resultado_usuarios->fetch_assoc()) {
                     </div>
                     <h3 class="text-lg font-black text-slate-900 mb-1">¿Eliminar este usuario del sistema?</h3>
                     <p class="text-sm text-slate-500 mb-4">
-                        Esta acción es definitiva. Se removerá el perfil de <strong class="text-slate-800" x-text="userDelete.nombre"></strong> (<span class="font-mono text-xs" x-text="'@' + userDelete.username"></span>) de la base de datos.
+                        Esta acción es definitiva. Se removerá el perfil de <strong class="text-slate-800" x-text="userDelete.nombre"></strong> (<span class="font-mono text-xs" x-text="'@' + userDelete.usuario"></span>) de la base de datos.
                     </p>
                 </div>
 

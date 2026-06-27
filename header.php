@@ -30,7 +30,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
             
             <div class="flex-shrink-0">
                 <h1 class="text-xs sm:text-sm md:text-base font-black tracking-wide text-sky-400 uppercase">
-                    ONG Montalbán <span class="hidden xl:inline text-white font-normal">— Sistema Gestión</span>
+                    ONG Montalbán
                 </h1>
             </div>
             
@@ -40,11 +40,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                     <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
                         <li><a href="panel_central.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Insumos</a></li>
                         <li><a href="formulario_donacion.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Donación</a></li>
+                        <li><a href="gestion_solicitudes.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Solicitudes</a></li>
                         <li><a href="recepcion_donaciones.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Recepción de donaciones</a></li>
                         <li><a href="historico_donaciones.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Historial</a></li>
                         <li><a href="gestion_usuarios.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Personal</a></li>
+                        <li><a href="gestion_centros.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Centros</a></li>    
                     <?php else: ?>
+                        <li><a href="panel_central.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Insumos</a></li>
+                        <li><a href="formulario_donacion.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Donación</a></li>
                         <li><a href="formulario_solicitud.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Solicitar Insumos</a></li>
+                        <li><a href="historico_donaciones.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Historial</a></li>
                     <?php endif; ?>
                 </ul>
                 
@@ -97,11 +102,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                 <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
                     <li><a href="panel_central.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Insumos</a></li>
                     <li><a href="formulario_donacion.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Registrar Donación</a></li>
+                    <li><a href="gestion_solicitudes.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Solicitudes</a></li>
                     <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
                     <li><a href="gestion_usuarios.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Gestionar Personal</a></li>
-                    <li><a href="crear_usuario.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Crear Usuario</a></li>
+                    <li><a href="gestion_centros.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Centros de Acopio</a></li>
+                
                 <?php else: ?>
+                    <li><a href="panel_central.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Insumos</a></li>
+                    <li><a href="formulario_donacion.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Registrar Donación</a></li>
                     <li><a href="formulario_solicitud.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Solicitar Insumos</a></li>
+                    <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
                 <?php endif; ?>
                 
                 <li class="pt-2">

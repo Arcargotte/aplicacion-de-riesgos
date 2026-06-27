@@ -1,10 +1,13 @@
 <?php
 session_start();
-// Control de acceso: solo administradores o personal autorizado
-if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_central') {
+// Control de acceso
+if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['centro_id'])) {
     header("Location: login.php");
     exit;
 }
+
+$centro_usuario = (int)$_SESSION['centro_id'];
+$usuario_id = (int)$_SESSION['usuario_id'];
 
 // --- 1. ENDPOINT AJAX: BUSCADOR INTERNO PARA LAS FILAS ---
 if (isset($_GET['sugerir_insumo'])) {
@@ -14,7 +17,8 @@ if (isset($_GET['sugerir_insumo'])) {
     $busqueda = $conn->real_escape_string(trim($_GET['sugerir_insumo']));
     if (empty($busqueda)) { echo json_encode([]); exit; }
 
-    $sql = "SELECT id, nombre, unidad_medida, categoria FROM insumos WHERE nombre LIKE '%$busqueda%' LIMIT 5";
+    // Ya no traemos "categoria" porque no existe en la BD
+    $sql = "SELECT id, nombre, unidad_medida FROM insumos WHERE nombre LIKE '%$busqueda%' LIMIT 5";
     $resultado = $conn->query($sql);
     
     $datos = [];
@@ -31,25 +35,52 @@ $tipo_mensaje = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
     try {
-        $conn = new mysqli("localhost", "root", "", "ong_inventario");
-        $conn->begin_transaction(); // Activamos la transacción SQL
+        require_once('conexion.php');
+        $conn->begin_transaction(); 
 
         $origen_donante = $conn->real_escape_string($_POST['origen_donante']); 
         $nombre_donante = $conn->real_escape_string(trim($_POST['nombre_donante']));
         $detalles_recepcion = $conn->real_escape_string(trim($_POST['detalles_recepcion']));
-        $usuario_id = intval($_SESSION['usuario_id']);
 
         if (empty($nombre_donante)) {
             throw new Exception("El nombre o razón social del donante es obligatorio.");
         }
 
-        // A. Insertar la cabecera en tu nueva tabla de ingresos
-        $sql_cabecera = "INSERT INTO ingresos_donaciones (origen_donante, nombre_donante, detalles, usuario_id) 
-                         VALUES ('$origen_donante', '$nombre_donante', '$detalles_recepcion', $usuario_id)";
-        $conn->query($sql_cabecera);
-        $ingreso_id = $conn->insert_id;
+        $persona_id = 'NULL';
+        $organizacion_id = 'NULL';
 
-        // B. Procesar las filas dinámicas enviadas desde la interfaz
+        // A. Clasificar y registrar al donante externo
+        if ($origen_donante === 'Persona Natural') {
+            $check = $conn->query("SELECT id FROM personas WHERE nombre = '$nombre_donante' LIMIT 1");
+            if ($check->num_rows > 0) {
+                $persona_id = $check->fetch_assoc()['id'];
+            } else {
+                $conn->query("INSERT INTO personas (nombre, apellido) VALUES ('$nombre_donante', '')");
+                $persona_id = $conn->insert_id;
+            }
+        } else {
+            // Mapeo automático de la institución
+            $tipo_org = 'Otro';
+            if ($origen_donante === 'Empresa Privada') $tipo_org = 'Empresa';
+            elseif ($origen_donante === 'Gobierno') $tipo_org = 'Gobierno';
+            elseif ($origen_donante === 'ONG') $tipo_org = 'ONG';
+
+            $check = $conn->query("SELECT id FROM organizaciones WHERE nombre = '$nombre_donante' LIMIT 1");
+            if ($check->num_rows > 0) {
+                $organizacion_id = $check->fetch_assoc()['id'];
+            } else {
+                $conn->query("INSERT INTO organizaciones (nombre, tipo) VALUES ('$nombre_donante', '$tipo_org')");
+                $organizacion_id = $conn->insert_id;
+            }
+        }
+
+        // B. Insertar la cabecera en el Historial de Movimientos
+        $sql_movimiento = "INSERT INTO movimientos (tipo_movimiento, centro_origen_id, centro_destino_id, persona_id, organizacion_id, usuario_id, detalles) 
+                           VALUES ('entrada', NULL, $centro_usuario, $persona_id, $organizacion_id, $usuario_id, '$detalles_recepcion')";
+        $conn->query($sql_movimiento);
+        $movimiento_id = $conn->insert_id;
+
+        // C. Procesar las filas dinámicas de insumos
         if (isset($_POST['filas_insumos']) && is_array($_POST['filas_insumos'])) {
             foreach ($_POST['filas_insumos'] as $fila) {
                 $nombre_insumo = $conn->real_escape_string(trim($fila['nombre']));
@@ -57,43 +88,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 
                 if (empty($nombre_insumo) || $cantidad_ingresar <= 0) continue;
 
-                // Bloqueo preventivo FOR UPDATE para mitigar concurrencia
-                $check = $conn->query("SELECT id, cantidad FROM insumos WHERE LOWER(nombre) = LOWER('$nombre_insumo') LIMIT 1 FOR UPDATE");
+                // 1. Verificar si el insumo existe en el catálogo global
+                $check_insumo = $conn->query("SELECT id FROM insumos WHERE LOWER(nombre) = LOWER('$nombre_insumo') LIMIT 1");
 
-                if ($check->num_rows > 0) {
-                    // EL INSUMO YA EXISTE: Sumamos el stock
-                    $insumo_db = $check->fetch_assoc();
-                    $insumo_id = $insumo_db['id'];
-                    $nueva_cantidad = floatval($insumo_db['cantidad']) + $cantidad_ingresar;
-
-                    $conn->query("UPDATE insumos SET cantidad = $nueva_cantidad, estado = 'disponible' WHERE id = $insumo_id");
+                if ($check_insumo->num_rows > 0) {
+                    $insumo_id = $check_insumo->fetch_assoc()['id'];
                 } else {
-                    // EL INSUMO NO EXISTE: Creación limpia en la BD
-                    $categoria = $conn->real_escape_string($fila['categoria']);
                     $unidad_medida = $conn->real_escape_string($fila['unidad_medida']);
-
-                    if (empty($categoria) || empty($unidad_medida)) {
-                        throw new Exception("El insumo '$nombre_insumo' es nuevo. Debe especificar su categoría y unidad de medida.");
+                    if (empty($unidad_medida)) {
+                        throw new Exception("El insumo '$nombre_insumo' es nuevo. Debe especificar su unidad de medida.");
                     }
-
-                    $conn->query("INSERT INTO insumos (nombre, categoria, cantidad, unidad_medida, estado) 
-                                  VALUES ('$nombre_insumo', '$categoria', $cantidad_ingresar, '$unidad_medida', 'disponible')");
+                    $conn->query("INSERT INTO insumos (nombre, unidad_medida) VALUES ('$nombre_insumo', '$unidad_medida')");
                     $insumo_id = $conn->insert_id;
                 }
 
-                // C. Insertar el desglose en el detalle de la donación
-                $conn->query("INSERT INTO detalle_ingresos_donaciones (ingreso_id, insumo_id, cantidad_recibida) 
-                              VALUES ($ingreso_id, $insumo_id, $cantidad_ingresar)");
+                // 2. Aumentar stock físico en el inventario del centro actual
+                $conn->query("INSERT INTO inventario (centro_id, insumo_id, cantidad) 
+                              VALUES ($centro_usuario, $insumo_id, $cantidad_ingresar)
+                              ON DUPLICATE KEY UPDATE cantidad = cantidad + $cantidad_ingresar");
+
+                // 3. Registrar desglose en detalles_movimiento para el historial
+                $conn->query("INSERT INTO detalles_movimiento (movimiento_id, insumo_id, cantidad) 
+                              VALUES ($movimiento_id, $insumo_id, $cantidad_ingresar)");
             }
         }
 
-        // Si ninguna query falló y no saltó ninguna excepción, consolidamos los datos
         $conn->commit();
-        $mensaje = "🎉 Entrada por donación registrada de forma íntegra en las nuevas tablas de control.";
+        $mensaje = "🎉 Donación registrada exitosamente. El inventario ha sido actualizado y se guardó en el historial.";
         $tipo_mensaje = "success";
     } catch (Exception $e) {
         if (isset($conn)) { $conn->rollback(); }
-        $mensaje = "❌ Error crítico al procesar la recepción: " . $e->getMessage();
+        $mensaje = "❌ Error al procesar la recepción: " . $e->getMessage();
         $tipo_mensaje = "error";
     }
     if (isset($conn)) { $conn->close(); }
@@ -104,10 +129,10 @@ include('header.php');
 
 <div class="max-w-4xl mx-auto py-6 px-4 sm:px-6" 
      x-data="{
-        filas: [ { id: Date.now(), nombre: '', cantidad: '', existe: false, categoria: '', unidad_medida: '', sugerencias: [], mostrarLista: false } ],
+        filas: [ { id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', sugerencias: [], mostrarLista: false } ],
         
         añadirFila() {
-            this.filas.push({ id: Date.now(), nombre: '', cantidad: '', existe: false, categoria: '', unidad_medida: '', sugerencias: [], mostrarLista: false });
+            this.filas.push({ id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', sugerencias: [], mostrarLista: false });
         },
         eliminarFila(index) {
             if(this.filas.length > 1) this.filas.splice(index, 1);
@@ -134,7 +159,6 @@ include('header.php');
         },
         seleccionarSugerencia(fila, sugerencia) {
             fila.nombre = sugerencia.nombre;
-            fila.categoria = sugerencia.categoria;
             fila.unidad_medida = sugerencia.unidad_medida;
             fila.existe = true;
             fila.mostrarLista = false;
@@ -145,9 +169,9 @@ include('header.php');
         
         <div class="bg-slate-50 border-b border-slate-200 px-6 py-4">
             <h2 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                Recepción de Donaciones de Terceros
+                Recepción de Donaciones Externas
             </h2>
-            <p class="text-xs text-slate-500 font-medium">Registra de forma centralizada los insumos donados por entes gubernamentales, privados o civiles.</p>
+            <p class="text-xs text-slate-500 font-medium">Ingreso de mercancía por donaciones de entes privados, gubernamentales o sociedad civil.</p>
         </div>
 
         <div class="p-6">
@@ -162,11 +186,12 @@ include('header.php');
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
                     <div class="flex flex-col gap-1">
-                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Tipo de Donante</label>
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Tipo de Entidad</label>
                         <select name="origen_donante" required class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500">
                             <option value="Persona Natural">👤 Persona Natural</option>
                             <option value="Empresa Privada">🏢 Empresa Privada</option>
                             <option value="Gobierno">🏛️ Entidad Gubernamental</option>
+                            <option value="ONG">🤝 ONG / Fundación</option>
                         </select>
                     </div>
 
@@ -177,8 +202,8 @@ include('header.php');
                     </div>
                     
                     <div class="flex flex-col gap-1 md:col-span-3">
-                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Detalles o Notas Adicionales</label>
-                        <input type="text" name="detalles_recepcion" placeholder="Ej. Insumos entregados bajo acta firmada, cajas selladas"
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Detalles o Notas Adicionales (Opcional)</label>
+                        <input type="text" name="detalles_recepcion" placeholder="Ej. Acta de entrega #442, cajas en buen estado..."
                                class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500">
                     </div>
                 </div>
@@ -196,9 +221,9 @@ include('header.php');
                             <div class="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 bg-white border rounded-xl items-center relative"
                                  :class="fila.existe ? 'border-amber-200 bg-amber-50/20' : 'border-slate-200'">
                                 
-                                <div class="md:col-span-4 relative">
+                                <div class="md:col-span-5 relative">
                                     <input type="text" :name="`filas_insumos[${index}][nombre]`" required x-model="fila.nombre"
-                                           @input.debounce.300ms="buscarInsumo(fila)" placeholder="Escribe para buscar o crear..."
+                                           @input.debounce.300ms="buscarInsumo(fila)" placeholder="Escribe para buscar o registrar insumo..."
                                            @click.away="fila.mostrarLista = false"
                                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-sky-500">
                                     
@@ -209,50 +234,34 @@ include('header.php');
                                                 <button type="button" @click="seleccionarSugerencia(fila, sug)"
                                                         class="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-sky-50 transition flex justify-between cursor-pointer">
                                                     <span x-text="sug.nombre"></span>
-                                                    <span class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-400" x-text="sug.categoria"></span>
+                                                    <span class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-400" x-text="sug.unidad_medida"></span>
                                                 </button>
                                             </li>
                                         </template>
                                     </ul>
                                 </div>
 
-                                <div class="md:col-span-2">
-                                    <input type="number" step="0.01" :name="`filas_insumos[${index}][cantidad]`" required min="0.01" placeholder="Cant."
+                                <div class="md:col-span-3">
+                                    <input type="number" step="0.01" :name="`filas_insumos[${index}][cantidad]`" required min="0.01" placeholder="Cantidad..."
                                            x-model="fila.cantidad" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-mono focus:outline-none focus:border-sky-500">
                                 </div>
 
-                                <div class="md:col-span-2.5">
-                                    <select :name="`filas_insumos[${index}][categoria]`" :required="!fila.existe" :disabled="fila.existe" x-model="fila.categoria"
-                                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-semibold focus:outline-none disabled:bg-slate-100 disabled:text-slate-500">
-                                        <option value="">Categoría...</option>
-                                        <option value="Alimentos">Alimentos</option>
-                                        <option value="Medicamentos">Medicamentos</option>
-                                        <option value="Material Médico">Material Médico</option>
-                                        <option value="Ropa">Ropa</option>
-                                        <option value="Higiene">Higiene</option>
-                                        <option value="Otros">Otros</option>
-                                    </select>
-                                    <template x-if="fila.existe">
-                                        <input type="hidden" :name="`filas_insumos[${index}][categoria]`" :value="fila.categoria">
-                                    </template>
-                                </div>
-
-                                <div class="md:col-span-2.5">
+                                <div class="md:col-span-3">
                                     <select :name="`filas_insumos[${index}][unidad_medida]`" :required="!fila.existe" :disabled="fila.existe" x-model="fila.unidad_medida"
                                             class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-semibold focus:outline-none disabled:bg-slate-100 disabled:text-slate-500">
                                         <option value="">Medida...</option>
-                                        <option value="Unidades">Unidades</option>
-                                        <option value="Kilogramos">Kilogramos</option>
-                                        <option value="Litros">Litros</option>
-                                        <option value="Cajas">Cajas</option>
-                                        <option value="Paquetes">Paquetes</option>
+                                        <option value="unidades">Unidades (Kits / Piezas)</option>
+                                        <option value="kilogramos">Kilogramos (Kg)</option>
+                                        <option value="litros">Litros (L)</option>
+                                        <option value="cajas">Cajas</option>
+                                        <option value="paquetes">Paquetes</option>
                                     </select>
                                     <template x-if="fila.existe">
                                         <input type="hidden" :name="`filas_insumos[${index}][unidad_medida]`" :value="fila.unidad_medida">
                                     </template>
                                 </div>
 
-                                <div class="md:col-span-1 text-right">
+                                <div class="md:col-span-1 text-center">
                                     <button type="button" @click="eliminarFila(index)" :disabled="filas.length === 1"
                                             class="text-red-500 hover:text-red-700 p-2 text-sm disabled:opacity-30 cursor-pointer">
                                         🗑️
@@ -261,7 +270,7 @@ include('header.php');
 
                                 <div class="absolute -top-2 right-10 md:right-12 px-2 py-0.5 text-[9px] font-black rounded-md uppercase tracking-wider shadow-xs"
                                      :class="fila.existe ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'">
-                                    <span x-text="fila.existe ? 'Sumará Stock' : 'Nuevo Insumo'"></span>
+                                    <span x-text="fila.existe ? 'Stock Existente' : 'Nuevo Insumo'"></span>
                                 </div>
 
                             </div>
