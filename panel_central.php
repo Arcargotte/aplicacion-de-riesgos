@@ -60,12 +60,16 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
 <body class="bg-slate-100 min-h-screen font-sans">
 
 <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-    
-    <div class="mb-6 border-b border-slate-200 pb-4">
-        <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Sede Central (Montalbán)
-        </h2>
-        <p class="text-sm text-slate-500 font-medium">Panel General de Control de Inventario</p>
+
+
+    <div class="mb-6 border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Insumos Sede Central Montalbán</h2>
+            <p class="text-sm text-slate-500 font-medium">Panel General de Control de Inventario </p>
+        </div>
+        <a href="agregar_insumo.php" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition text-center shadow-md shadow-sky-600/10">
+        Agregar Insumo
+        </a>
     </div>
 
     <div class="space-y-6">
@@ -88,7 +92,13 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
             <?php else: ?>
                 
                 <div class="block md:hidden mb-4">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">🔍 Buscar Insumo:</label>
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                        <span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+                        </svg> Buscar insumo:
+                       </span>
+                    </label>
                     <input type="text" id="buscar-movil-inventario" placeholder="Escribe el nombre del artículo..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
                 </div>
 
@@ -185,7 +195,11 @@ $inventario_actual = $conn->query("SELECT * FROM insumos WHERE estado = 'disponi
                 "info": "Mostrando página _PAGE_ de _PAGES_",
                 "infoEmpty": "No hay stock registrado",
                 "infoFiltered": "(filtrado de un total de _MAX_ registros)",
-                "search": "🔍 Buscar:",
+                "search": `<span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+                        </svg>
+                       </span>`,
                 "paginate": { "first": "Primero", "last": "Último", "next": "Sig.", "previous": "Ant." }
             },
             "order": [[1, "asc"]] // Ordenar alfabéticamente por nombre de insumo

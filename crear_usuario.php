@@ -75,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     <div class="mb-6 border-b border-slate-200 pb-4">
         <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            👤 Registrar Nuevo Usuario
+            Registrar Nuevo Usuario
         </h2>
         <p class="text-sm text-slate-500 font-medium">Asigna credenciales y dependencias según el esquema oficial</p>
     </div>

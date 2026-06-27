@@ -23,7 +23,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $persona_id = "NULL";
     $centro_id = "NULL";
 
-    // CORRECCIÓN: Inicializamos la variable aquí arriba para evitar advertencias de "variable no definida" en el catch
     $error_stock = false;
 
     // Iniciamos la transacción antes de evaluar e insertar datos dependientes
@@ -74,7 +73,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         $conn->query("INSERT INTO detalle_entregas (entrega_id, insumo_id, cantidad_donada) VALUES ($entrega_id, $insumo_id, $cantidad_a_donar)");
                     } else {
                         $error_stock = true; 
-                        // Lanzamos una excepción manual para activar el rollback automático y no procesar de manera parcial
                         throw new Exception("Stock insuficiente para el insumo ID: $insumo_id");
                     }
                 }
@@ -87,7 +85,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
 
     } catch (Exception $e) {
-        // Ante cualquier error o excepción de stock, revertimos todo al estado inicial
         $conn->rollback();
         
         $msj_alerta = ($error_stock) 
@@ -99,7 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// 2. OBTENER DATOS DE LA BD PARA LOS DROPDOWNS (Fuera de la transacción de envío)
+// 2. OBTENER DATOS DE LA BD PARA LOS DROPDOWNS
 try {
     $centros = $conn->query("SELECT * FROM centros_acopio");
     $insumos_disponibles = $conn->query("SELECT * FROM insumos WHERE estado = 'disponible'");
@@ -110,134 +107,68 @@ try {
 include('header.php');
 ?>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Despacho de Insumos - Sede Central</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans">
 
-<style>
-    /* Estilos responsivos añadidos de forma nativa */
-    .form-container {
-        width: 100%;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 15px;
-        box-sizing: border-box;
-    }
-    .form-card {
-        background: white; 
-        padding: 25px; 
-        border-radius: 8px; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .grid-form {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    .form-group {
-        margin-bottom: 15px;
-    }
-    .form-group label {
-        display: block; 
-        font-weight: bold; 
-        margin-bottom: 5px;
-    }
-    .form-control {
-        width: 100%; 
-        padding: 10px; 
-        border: 1px solid #ccc; 
-        border-radius: 4px; 
-        box-sizing: border-box;
-    }
+<div class="max-w-3xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
     
-    /* Adaptación de los items de insumos */
-    .item-insumo {
-        background: #f8f9fa; 
-        padding: 12px; 
-        margin-bottom: 10px; 
-        border-radius: 4px; 
-        display: flex; 
-        flex-direction: row;
-        align-items: center; 
-        justify-content: space-between; 
-        border: 1px solid #e9ecef;
-        gap: 10px;
-    }
-    .insumo-info {
-        flex: 2;
-    }
-    .insumo-action {
-        flex: 1; 
-        text-align: right;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 5px;
-    }
-    .input-cantidad {
-        width: 100px; 
-        padding: 8px; 
-        border: 1px solid #ccc; 
-        border-radius: 4px;
-        box-sizing: border-box;
-    }
+    <div class="mb-6 border-b border-slate-200 pb-4">
+        <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Registrar Nueva Entrega / Donación
+        </h2>
+        <p class="text-sm text-slate-500 font-medium">Egreso de mercancía y actualización automática de inventario</p>
+    </div>
 
-    /* Media Queries para pantallas medianas/grandes (Tablets y Escritorio) */
-    @media (min-width: 600px) {
-        .grid-form {
-            grid-template-columns: 1fr 1fr; /* Dos columnas para los datos personales */
-        }
-        .full-width-md {
-            grid-column: span 2;
-        }
-    }
-
-    /* Media Queries para pantallas pequeñas (Móviles) */
-    @media (max-width: 500px) {
-        .form-card {
-            padding: 15px;
-        }
-        .item-insumo {
-            flex-direction: column; /* Apila el checkbox y el input de cantidad verticalmente */
-            align-items: flex-start;
-        }
-        .insumo-action {
-            width: 100%;
-            justify-content: flex-start;
-            margin-top: 5px;
-        }
-        .input-cantidad {
-            width: 70%; /* El input toma más espacio en pantallas de móvil */
-        }
-    }
-</style>
-
-<div class="form-container">
-    <div class="form-card">
-        <h2 style="margin-bottom: 20px; font-size: 1.6rem;">Registrar Nueva Entrega / Donación</h2>
-        <form action="" method="POST">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-8">
+        <form action="" method="POST" class="space-y-6">
             
-            <div class="form-group">
-                <label for="tipo_receptor">Tipo de Receptor:</label>
-                <select name="tipo_receptor" id="tipo_receptor" onchange="toggleReceptor()" required class="form-control">
-                    <option value="persona">Persona Natural</option>
-                    <option value="centro">Centro de Acopio</option>
+            <div class="space-y-1.5">
+                <label for="tipo_receptor" class="text-xs font-black text-slate-500 uppercase tracking-wider block">Tipo de Destinatario:</label>
+                <select name="tipo_receptor" id="tipo_receptor" onchange="toggleReceptor()" required 
+                        class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-semibold focus:outline-hidden focus:ring-2 focus:ring-slate-400 focus:border-transparent transition">
+                    <option value="persona">Persona Natural (Caso de vulnerabilidad)</option>
+                    <option value="centro">Centro de Acopio (Sede alterna / Refugio)</option>
                 </select>
             </div>
 
-            <div id="campos_persona">
-                <h3 style="margin: 20px 0 10px; font-size: 1.3rem;">Datos del Beneficiario</h3>
-                <div class="grid-form">
-                    <div class="form-group"><label>Cédula:</label><input type="text" name="cedula" id="cedula" class="form-control"></div>
-                    <div class="form-group"><label>Nombre:</label><input type="text" name="nombre" class="form-control"></div>
-                    <div class="form-group"><label>Apellido:</label><input type="text" name="apellido" class="form-control"></div>
-                    <div class="form-group"><label>Teléfono:</label><input type="text" name="telefono" class="form-control"></div>
+            <div id="campos_persona" class="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60 space-y-4">
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider border-b border-slate-200/60 pb-1.5 flex items-center gap-1.5">
+                    👤 Datos del Beneficiario
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500">Cédula:</label>
+                        <input type="text" name="cedula" id="cedula" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500">Nombre:</label>
+                        <input type="text" name="nombre" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500">Apellido:</label>
+                        <input type="text" name="apellido" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500">Teléfono:</label>
+                        <input type="text" name="telefono" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
+                    </div>
                 </div>
             </div>
 
-            <div id="campos_centro" style="display:none;">
-                <h3 style="margin: 20px 0 10px; font-size: 1.3rem;">Seleccionar Centro de Acopio</h3>
-                <div class="form-group">
-                    <label>Centro Destino:</label>
-                    <select name="centro_id" id="centro_id" class="form-control">
+            <div id="campos_centro" class="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60 space-y-3" style="display:none;">
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider border-b border-slate-200/60 pb-1.5 flex items-center gap-1.5">
+                    🏢 Sede o Unidad Temática Destino
+                </h3>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500">Centro Destino:</label>
+                    <select name="centro_id" id="centro_id" class="w-full text-sm bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
                         <?php while($c = $centros->fetch_assoc()): ?>
                             <option value="<?=$c['id']?>"><?=$c['nombre']?> (<?=$c['ubicacion']?>)</option>
                         <?php endwhile; ?>
@@ -245,36 +176,41 @@ include('header.php');
                 </div>
             </div>
 
-            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
-            <h3 style="margin-bottom: 15px; font-size: 1.3rem;">Detalle de la Entrega (Insumos)</h3>
-
-            <div class="form-group">
-                <label style="margin-bottom:10px;">Selecciona los Insumos y la Cantidad a Donar:</label>
-                
-                <div style="margin-bottom: 12px;">
-                    <input type="text" id="buscador_insumos" onkeyup="filtrarInsumos()" placeholder="🔍 Buscar insumo por nombre..." class="form-control" style="padding: 10px; font-size: 14px;">
+            <div class="space-y-3">
+                <div class="border-b border-slate-100 pb-2">
+                    <h3 class="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider">Detalle de la Entrega (Insumos)</h3>
+                    <p class="text-xs text-slate-400">Selecciona los elementos que van a retirarse de los estantes.</p>
                 </div>
 
-                <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;" id="lista_contenedor_insumos">
+                <div class="relative">
+                    <input type="text" id="buscador_insumos" onkeyup="filtrarInsumos()" placeholder="Filtrar existencias por nombre..." 
+                           class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-slate-400 transition">
+                </div>
+
+                <div class="max-h-72 overflow-y-auto border border-slate-200 rounded-xl p-2 bg-slate-50/30 divide-y divide-slate-100" id="lista_contenedor_insumos">
                     
                     <?php if($insumos_disponibles->num_rows == 0): ?>
-                        <p style="color:gray;" id="sin_insumos_msg">No hay insumos en el inventario actual.</p>
+                        <p class="text-slate-400 text-xs text-center py-6 font-medium" id="sin_insumos_msg">No hay insumos aptos o disponibles en stock.</p>
                     <?php endif; ?>
                     
                     <?php 
                     $index = 0;
                     while($ins = $insumos_disponibles->fetch_assoc()): 
                     ?>
-                        <div class="item-insumo" data-nombre="<?=strtolower($ins['nombre'])?>">
-                            <div class="insumo-info">
-                                <input type="checkbox" name="insumos[<?=$index?>]" value="<?=$ins['id']?>" id="chk_<?=$ins['id']?>" onchange="toggleCantidad(<?=$ins['id']?>)"> 
-                                <label for="chk_<?=$ins['id']?>" style="cursor:pointer; font-weight:normal; display: inline;">
-                                    <strong><?=$ins['nombre']?></strong> <span style="font-size: 0.9rem; color:#555;">(Disp: <?=$ins['cantidad']?> <?=$ins['unidad_medida']?>)</span>
+                        <div class="item-insumo flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 transition duration-700 hover:bg-slate-50/60" data-nombre="<?=strtolower($ins['nombre'])?>">
+                            <div class="flex items-start gap-2.5 sm:max-w-md">
+                                <input type="checkbox" name="insumos[<?=$index?>]" value="<?=$ins['id']?>" id="chk_<?=$ins['id']?>" onchange="toggleCantidad(<?=$ins['id']?>)"
+                                       class="mt-1 w-4 h-4 rounded-sm border-slate-300 text-slate-900 focus:ring-slate-400 cursor-pointer"> 
+                                <label for="chk_<?=$ins['id']?>" class="cursor-pointer text-xs sm:text-sm text-slate-700 select-none leading-tight">
+                                    <strong class="text-slate-900 font-bold block sm:inline"><?=$ins['nombre']?></strong> 
+                                    <span class="text-xs text-slate-400 sm:ml-1 block sm:inline font-medium">(Disp: <?=number_format($ins['cantidad'], 2)?> <?=$ins['unidad_medida']?>)</span>
                                 </label>
                             </div>
-                            <div class="insumo-action">
-                                <input type="number" step="0.01" name="cantidades[<?=$index?>]" id="cant_<?=$ins['id']?>" placeholder="Cantidad" disabled class="input-cantidad" max="<?=$ins['cantidad']?>">
-                                <span style="font-size: 12px; color: #666; min-width: 30px; text-align: left;"><?=$ins['unidad_medida']?></span>
+                            <div class="flex items-center gap-1.5 pl-6 sm:pl-0">
+                                <input type="number" step="0.01" name="cantidades[<?=$index?>]" id="cant_<?=$ins['id']?>" placeholder="0.00" disabled 
+                                       max="<?=$ins['cantidad']?>"
+                                       class="input-cantidad w-24 text-center text-xs font-bold bg-white border border-slate-200 rounded-lg px-2 py-1 disabled:opacity-40 disabled:bg-slate-100 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
+                                <span class="text-xs font-bold text-slate-400 min-w-[35px]"><?=$ins['unidad_medida']?></span>
                             </div>
                         </div>
                     <?php 
@@ -282,21 +218,29 @@ include('header.php');
                     endwhile; 
                     ?>
                     
-                    <p id="no_resultados" style="display: none; color: #64748b; text-align: center; padding: 10px;">No se encontraron insumos que coincidan.</p>
+                    <p id="no_resultados" class="hidden text-xs text-slate-400 text-center py-8 font-semibold">⚠️ Ningún artículo coincide con tu búsqueda.</p>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Detalle Adicional / Observaciones:</label>
-                <textarea name="detalle_adicional" rows="3" class="form-control"></textarea>
+            <div class="grid grid-cols-1 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-black text-slate-500 uppercase tracking-wider block">Detalle Adicional / Observaciones:</label>
+                    <textarea name="detalle_adicional" rows="3" placeholder="Añade justificaciones del caso o estados de entrega..." 
+                              class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400"></textarea>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-black text-slate-500 uppercase tracking-wider block">Responsable de la Entrega:</label>
+                    <input type="text" name="responsable_entrega" placeholder="Nombre de quien despacha" required 
+                           class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
+                </div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 25px;">
-                <label>Responsable de la Entrega:</label>
-                <input type="text" name="responsable_entrega" required class="form-control">
+            <div class="pt-4 border-t border-slate-200">
+                <button type="submit" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md transform active:scale-[0.99] transition duration-150 cursor-pointer">
+                    Registrar Entrega y Actualizar Inventario
+                </button>
             </div>
-
-            <button type="submit" style="background: #007bff; color: white; border: none; padding: 14px 20px; cursor: pointer; border-radius: 4px; font-size: 16px; width: 100%; font-weight: bold;">Registrar Entrega y Actualizar Inventario</button>
         </form>
     </div>
 </div>
@@ -343,19 +287,19 @@ function filtrarInsumos() {
         const nombreInsumo = fila.getAttribute('data-nombre');
         const checkbox = fila.querySelector('input[type="checkbox"]');
         
+        // Mantener visible si coincide con la búsqueda o si ya está seleccionado
         if (nombreInsumo.includes(textoBusqueda) || checkbox.checked) {
-            // Se usa el display adecuado según tamaño de pantalla a través de remoción de la propiedad inline obsoleta
-            fila.style.display = ''; 
+            fila.classList.remove('hidden');
             coincidencias++;
         } else {
-            fila.style.display = 'none';
+            fila.classList.add('hidden');
         }
     });
 
     if (coincidencias === 0 && filasInsumos.length > 0) {
-        mensajeNoResultados.style.display = 'block';
+        mensajeNoResultados.classList.remove('hidden');
     } else {
-        mensajeNoResultados.style.display = 'none';
+        mensajeNoResultados.classList.add('hidden');
     }
 }
 

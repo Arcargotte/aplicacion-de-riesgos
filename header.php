@@ -38,21 +38,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                 
                 <ul class="flex items-center gap-x-4 lg:gap-x-6 xl:gap-x-8 list-none m-0 p-0">
                     <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
-                        <li><a href="panel_central.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">🏠 Panel</a></li>
-                        <li><a href="agregar_insumo.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">🏠 Agregar insumo</a></li>
-                        <li><a href="formulario_donacion.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">🎁 Donación</a></li>
-                        <li><a href="historico_donaciones.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">📜 Historial</a></li>
-                        <li><a href="gestion_usuarios.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">👥 Personal</a></li>
-                        <li><a href="crear_usuario.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">➕ Nuevo Usuario</a></li>
+                        <li><a href="panel_central.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Insumos</a></li>
+                        <li><a href="formulario_donacion.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Donación</a></li>
+                        <li><a href="historico_donaciones.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Historial</a></li>
+                        <li><a href="gestion_usuarios.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Personal</a></li>
                     <?php else: ?>
-                        <li><a href="formulario_solicitud.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">📋 Solicitar Insumos</a></li>
+                        <li><a href="formulario_solicitud.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition whitespace-nowrap">Solicitar Insumos</a></li>
                     <?php endif; ?>
                 </ul>
                 
                 <div class="flex items-center gap-x-3 lg:gap-x-4 border-l border-slate-800 pl-4 lg:pl-6 flex-shrink-0">
                     <div class="bg-slate-800/90 px-3 py-1.5 rounded-xl flex items-center gap-x-2 border border-slate-700/50">
                         <span class="text-xs font-black text-slate-200 tracking-wide max-w-[120px] lg:max-w-none truncate">
-                            👤 <?php echo htmlspecialchars($_SESSION['nombre']); ?>
+                             <?php echo htmlspecialchars($_SESSION['nombre']); ?>
                         </span>
                         <span class="bg-sky-600 text-[9px] lg:text-[10px] text-white px-2 py-0.5 rounded-md font-black uppercase tracking-wider whitespace-nowrap">
                             <?php echo str_replace('_', ' ', $_SESSION['rol']); ?>
@@ -87,7 +85,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
          class="md:hidden border-t border-slate-800 bg-slate-900 pb-4 px-4" x-cloak>
         
         <div class="my-4 p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex flex-col gap-1.5">
-            <span class="text-sm font-bold text-slate-100">👤 <?php echo htmlspecialchars($_SESSION['nombre']); ?></span>
+            <span class="text-sm font-bold text-slate-100"><?php echo htmlspecialchars($_SESSION['nombre']); ?></span>
             <span class="w-fit bg-sky-600 text-[10px] text-white px-2 py-0.5 rounded-md font-bold uppercase">
                 <?php echo str_replace('_', ' ', $_SESSION['rol']); ?>
             </span>
@@ -96,14 +94,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         <nav class="space-y-2">
             <ul class="flex flex-col gap-1 list-none m-0 p-0">
                 <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
-                    <li><a href="panel_central.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">🏠 Panel Central</a></li>
-                    <li><a href="agregar_insumo.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">🏠 Agregar insumo</a></li>
-                    <li><a href="formulario_donacion.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">🎁 Registrar Donación</a></li>
-                    <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">📜 Historial Entregas</a></li>
-                    <li><a href="gestion_usuarios.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">👥 Gestionar Personal</a></li>
-                    <li><a href="crear_usuario.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">➕ Crear Usuario</a></li>
+                    <li><a href="panel_central.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Insumos</a></li>
+                    <li><a href="formulario_donacion.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Registrar Donación</a></li>
+                    <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
+                    <li><a href="gestion_usuarios.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Gestionar Personal</a></li>
+                    <li><a href="crear_usuario.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Crear Usuario</a></li>
                 <?php else: ?>
-                    <li><a href="formulario_solicitud.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">📋 Solicitar Insumos</a></li>
+                    <li><a href="formulario_solicitud.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Solicitar Insumos</a></li>
                 <?php endif; ?>
                 
                 <li class="pt-2">

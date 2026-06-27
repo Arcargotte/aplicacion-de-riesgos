@@ -81,7 +81,7 @@ $resultado_entregas = $conn->query($sql_entregas);
     <!-- CABECERA GENERAL -->
     <div class="border-b border-slate-200 pb-4">
         <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            📊 Historial General de Inventario
+            Historial General de Inventario
         </h2>
         <p class="text-sm text-slate-500 font-medium">Auditoría completa de flujos de carga (Entradas y Salidas)</p>
     </div>
@@ -92,7 +92,7 @@ $resultado_entregas = $conn->query($sql_entregas);
     <div class="space-y-4">
         <div class="flex flex-col">
             <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
-                📥 Lotes Recibidos (Entradas al Almacén)
+                Lotes Recibidos (Entradas al Almacén)
             </h3>
             <p class="text-xs text-slate-500 font-medium">Donaciones aportadas por personas, empresas o el gobierno.</p>
         </div>
@@ -100,13 +100,21 @@ $resultado_entregas = $conn->query($sql_entregas);
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
             <?php if ($resultado_ingresos->num_rows === 0): ?>
                 <div class="text-center py-8 text-slate-400 text-sm font-medium">
-                    📦 No se han registrado ingresos de donaciones en el sistema todavía.
+                    No se han registrado ingresos de donaciones en el sistema todavía.
                 </div>
             <?php else: ?>
                 
                 <!-- BUSCADOR MÓVIL INGRESOS -->
                 <div class="block lg:hidden mb-4">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">🔍 Buscar en Lotes Recibidos:</label>
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                                            <span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+                        </svg> Buscar en Lotes Recibidos:
+                       </span>    
+
+
+                    </label>
                     <input type="text" id="buscar-movil-ingresos" placeholder="Filtrar por donante, ID, notas..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
                 </div>
 
@@ -198,7 +206,7 @@ $resultado_entregas = $conn->query($sql_entregas);
                                     <?php
                                     $res_det_ing = $conn->query("SELECT di.cantidad_recibida, i.nombre, i.unidad_medida FROM detalle_ingresos_donaciones di JOIN insumos i ON di.insumo_id = i.id WHERE di.ingreso_id = $ing_id");
                                     while($det_ing = $res_det_ing->fetch_assoc()) {
-                                        echo "<li class='border-b border-slate-50 pb-1 last:border-0 last:pb-0'>📈 <span class='font-black text-emerald-700'>+" . number_format($det_ing['cantidad_recibida'], 2) . " " . htmlspecialchars($det_ing['unidad_medida']) . "</span> de " . htmlspecialchars($det_ing['nombre']) . "</li>";
+                                        echo "<li class='border-b border-slate-50 pb-1 last:border-0 last:pb-0'> <span class='font-black text-emerald-700'>+" . number_format($det_ing['cantidad_recibida'], 2) . " " . htmlspecialchars($det_ing['unidad_medida']) . "</span> de " . htmlspecialchars($det_ing['nombre']) . "</li>";
                                     }
                                     ?>
                                 </ul>
@@ -234,7 +242,7 @@ $resultado_entregas = $conn->query($sql_entregas);
     <div class="space-y-4">
         <div class="flex flex-col">
             <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
-                📤 Despachos Realizados (Salidas de Inventario)
+                Despachos Realizados (Salidas de Inventario)
             </h3>
             <p class="text-xs text-slate-500 font-medium">Asignaciones distribuidas a personas vulnerables o centros de acopio.</p>
         </div>
@@ -248,7 +256,13 @@ $resultado_entregas = $conn->query($sql_entregas);
 
                 <!-- BUSCADOR MÓVIL ENTREGAS -->
                 <div class="block lg:hidden mb-4">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">🔍 Buscar en Despachos:</label>
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                                            <span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+                        </svg> Buscar en Despachos:
+                       </span>    
+                    </label>
                     <input type="text" id="buscar-movil-entregas" placeholder="Filtrar por beneficiario, responsable, ID..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-slate-400">
                 </div>
 
@@ -348,7 +362,7 @@ $resultado_entregas = $conn->query($sql_entregas);
                                     <?php
                                     $resultado_detalles = $conn->query("SELECT de.cantidad_donada, i.nombre, i.unidad_medida FROM detalle_entregas de JOIN insumos i ON de.insumo_id = i.id WHERE de.entrega_id = $ent_id");
                                     while($detalle = $resultado_detalles->fetch_assoc()) {
-                                        echo "<li class='border-b border-slate-50 pb-1 last:border-0 last:pb-0'>📉 <span class='font-black text-rose-700'>-" . number_format($detalle['cantidad_donada'], 2) . " " . htmlspecialchars($detalle['unidad_medida']) . "</span> de " . htmlspecialchars($detalle['nombre']) . "</li>";
+                                        echo "<li class='border-b border-slate-50 pb-1 last:border-0 last:pb-0'><span class='font-black text-rose-700'>-" . number_format($detalle['cantidad_donada'], 2) . " " . htmlspecialchars($detalle['unidad_medida']) . "</span> de " . htmlspecialchars($detalle['nombre']) . "</li>";
                                     }
                                     ?>
                                 </ul>
@@ -392,7 +406,11 @@ $resultado_entregas = $conn->query($sql_entregas);
             "info": "Mostrando página _PAGE_ de _PAGES_",
             "infoEmpty": "No hay registros disponibles",
             "infoFiltered": "(filtrado de un total de _MAX_ registros)",
-            "search": "🔍 Buscar:",
+            "search": `<span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
+                    <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+                    </svg>
+                    </span>`,
             "paginate": { "first": "Primero", "last": "Último", "next": "Sig.", "previous": "Ant." }
         };
 

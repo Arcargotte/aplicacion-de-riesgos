@@ -151,7 +151,7 @@ include('header.php');
         
         <div class="bg-slate-50 border-b border-slate-200 px-6 py-4">
             <h2 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                📦 Entrada de Insumos al Almacén
+                Entrada de Insumos al Almacén
             </h2>
             <p class="text-xs text-slate-500 font-medium">Busca y selecciona un insumo existente o escribe uno nuevo para registrarlo.</p>
         </div>
@@ -268,7 +268,7 @@ include('header.php');
                     <button type="submit" 
                             :class="existe ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/10' : 'bg-sky-600 hover:bg-sky-700 shadow-sky-600/10'"
                             class="w-full text-white text-xs font-black py-3.5 px-4 rounded-xl transition text-center shadow-lg uppercase tracking-wider cursor-pointer">
-                        <span x-text="existe ? '➕ Incrementar Stock Existente' : '💾 Registrar Nuevo Insumo'">Registrar Insumo</span>
+                        <span x-text="existe ? ' Incrementar Stock Existente' : ' Registrar Nuevo Insumo'">Registrar Insumo</span>
                     </button>
                 </div>
 

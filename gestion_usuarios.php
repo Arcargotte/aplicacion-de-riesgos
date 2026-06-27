@@ -114,11 +114,11 @@ while($user = $resultado_usuarios->fetch_assoc()) {
     
     <div class="mb-6 border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">👥 Control de Personal y Roles</h2>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Control de Personal y Roles</h2>
             <p class="text-sm text-slate-500 font-medium">Administra las credenciales de acceso de cada centro de acopio</p>
         </div>
         <a href="crear_usuario.php" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition text-center shadow-md shadow-sky-600/10">
-            ➕ Registrar Nuevo Usuario
+        Registrar Nuevo Usuario
         </a>
     </div>
 
@@ -135,7 +135,7 @@ while($user = $resultado_usuarios->fetch_assoc()) {
                 
                 <div class="bg-slate-50 border-b border-slate-200 px-4 py-3.5 sm:px-6">
                     <h3 class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-2">
-                        🏢 <span><?php echo htmlspecialchars($sede); ?></span>
+                        <span><?php echo htmlspecialchars($sede); ?></span>
                         <span class="ml-auto bg-slate-200 text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-bold">
                             <?php echo count($lista_usuarios); ?> usuarios
                         </span>
