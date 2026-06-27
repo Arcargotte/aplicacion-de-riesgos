@@ -17,12 +17,17 @@ if (isset($_GET['sugerir_insumo'])) {
     $busqueda = $conn->real_escape_string(trim($_GET['sugerir_insumo']));
     if (empty($busqueda)) { echo json_encode([]); exit; }
 
-    // Ya no traemos "categoria" porque no existe en la BD
-    $sql = "SELECT id, nombre, unidad_medida FROM insumos WHERE nombre LIKE '%$busqueda%' LIMIT 5";
+    $sql = "SELECT i.id, i.nombre, i.unidad_medida, IFNULL(inv.cantidad, 0) as stock_actual 
+            FROM insumos i 
+            LEFT JOIN inventario inv ON i.id = inv.insumo_id AND inv.centro_id = $centro_usuario
+            WHERE i.nombre LIKE '%$busqueda%' LIMIT 5";
+            
     $resultado = $conn->query($sql);
     
     $datos = [];
-    while ($row = $resultado->fetch_assoc()) { $datos[] = $row; }
+    while ($row = $resultado->fetch_assoc()) { 
+        $datos[] = $row; 
+    }
     echo json_encode($datos);
     $conn->close();
     exit;
@@ -63,7 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $tipo_org = 'Otro';
             if ($origen_donante === 'Empresa Privada') $tipo_org = 'Empresa';
             elseif ($origen_donante === 'Gobierno') $tipo_org = 'Gobierno';
-            elseif ($origen_donante === 'ONG') $tipo_org = 'ONG';
+            elseif ($origen_donante === 'ONG' || $origen_donante === 'ONG_Principal') $tipo_org = 'ONG';
 
             $check = $conn->query("SELECT id FROM organizaciones WHERE nombre = '$nombre_donante' LIMIT 1");
             if ($check->num_rows > 0) {
@@ -88,7 +93,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 
                 if (empty($nombre_insumo) || $cantidad_ingresar <= 0) continue;
 
-                // 1. Verificar si el insumo existe en el catálogo global
                 $check_insumo = $conn->query("SELECT id FROM insumos WHERE LOWER(nombre) = LOWER('$nombre_insumo') LIMIT 1");
 
                 if ($check_insumo->num_rows > 0) {
@@ -102,12 +106,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $insumo_id = $conn->insert_id;
                 }
 
-                // 2. Aumentar stock físico en el inventario del centro actual
                 $conn->query("INSERT INTO inventario (centro_id, insumo_id, cantidad) 
                               VALUES ($centro_usuario, $insumo_id, $cantidad_ingresar)
                               ON DUPLICATE KEY UPDATE cantidad = cantidad + $cantidad_ingresar");
 
-                // 3. Registrar desglose en detalles_movimiento para el historial
                 $conn->query("INSERT INTO detalles_movimiento (movimiento_id, insumo_id, cantidad) 
                               VALUES ($movimiento_id, $insumo_id, $cantidad_ingresar)");
             }
@@ -129,10 +131,12 @@ include('header.php');
 
 <div class="max-w-4xl mx-auto py-6 px-4 sm:px-6" 
      x-data="{
-        filas: [ { id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', sugerencias: [], mostrarLista: false } ],
+        tipoDonante: 'Persona Natural',
+        nombreDonante: '',
+        filas: [ { id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', stock: 0, sugerencias: [], mostrarLista: false } ],
         
         añadirFila() {
-            this.filas.push({ id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', sugerencias: [], mostrarLista: false });
+            this.filas.push({ id: Date.now(), nombre: '', cantidad: '', existe: false, unidad_medida: '', stock: 0, sugerencias: [], mostrarLista: false });
         },
         eliminarFila(index) {
             if(this.filas.length > 1) this.filas.splice(index, 1);
@@ -160,6 +164,7 @@ include('header.php');
         seleccionarSugerencia(fila, sugerencia) {
             fila.nombre = sugerencia.nombre;
             fila.unidad_medida = sugerencia.unidad_medida;
+            fila.stock = sugerencia.stock_actual;
             fila.existe = true;
             fila.mostrarLista = false;
         }
@@ -187,18 +192,24 @@ include('header.php');
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
                     <div class="flex flex-col gap-1">
                         <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Tipo de Entidad</label>
-                        <select name="origen_donante" required class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500">
+                        <select name="origen_donante" required x-model="tipoDonante"
+                                @change="if(tipoDonante === 'ONG_Principal') { nombreDonante = 'Samaritan´s Purse'; } else { nombreDonante = ''; }"
+                                class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500 transition cursor-pointer">
                             <option value="Persona Natural">👤 Persona Natural</option>
                             <option value="Empresa Privada">🏢 Empresa Privada</option>
                             <option value="Gobierno">🏛️ Entidad Gubernamental</option>
-                            <option value="ONG">🤝 ONG / Fundación</option>
+                            <option value="ONG">🤝 ONG / Fundación (Otra)</option>
+                            <option value="ONG_Principal">⭐ ONG Patrocinadora Principal</option>
                         </select>
                     </div>
 
                     <div class="flex flex-col gap-1 md:col-span-2">
                         <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Nombre / Razón Social del Donante</label>
                         <input type="text" name="nombre_donante" required placeholder="Ej. Juan Pérez, Farmatodo, Gobernación"
-                               class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500">
+                               x-model="nombreDonante"
+                               :readonly="tipoDonante === 'ONG_Principal'"
+                               :class="tipoDonante === 'ONG_Principal' ? 'bg-amber-50 border-amber-300 text-amber-900 font-black cursor-not-allowed shadow-inner' : 'bg-white border-slate-200 text-slate-800'"
+                               class="border rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500 transition">
                     </div>
                     
                     <div class="flex flex-col gap-1 md:col-span-3">
@@ -272,6 +283,12 @@ include('header.php');
                                      :class="fila.existe ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'">
                                     <span x-text="fila.existe ? 'Stock Existente' : 'Nuevo Insumo'"></span>
                                 </div>
+                                
+                                <template x-if="fila.existe">
+                                    <div class="md:col-span-12 mt-1 text-[11px] font-bold text-amber-700 px-1">
+                                        ℹ️ Stock actual en sede: <span x-text="fila.stock"></span> <span x-text="fila.unidad_medida"></span>
+                                    </div>
+                                </template>
 
                             </div>
                         </template>
