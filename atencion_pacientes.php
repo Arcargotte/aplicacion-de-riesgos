@@ -22,13 +22,19 @@ try {
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
 // A. REGISTRO DE NUEVA VÍCTIMA (Soporta envío tradicional y AJAX)
-        if (isset($_POST['registrar_victima'])) {
+if (isset($_POST['registrar_victima'])) {
             $es_ajax = (isset($_POST['is_ajax']) && $_POST['is_ajax'] == '1');
             
             $centro_destino = $centro_id;
             $nombre = !empty(trim($_POST['nombre_apellido'])) ? $conn->real_escape_string($_POST['nombre_apellido']) : 'Desconocido';
             $cedula = !empty(trim($_POST['cedula'])) ? $conn->real_escape_string($_POST['cedula']) : 'X-XXXXXXXXX';
             $edad = intval($_POST['edad_aproximada']);
+            
+            // CAPTURA Y VALIDACIÓN DE NUEVOS CAMPOS (PESO Y ESTATURA)
+            // Se usa floatval para admitir decimales. Si no se envían, se asigna NULL.
+            $peso = !empty($_POST['peso']) ? floatval($_POST['peso']) : NULL;
+            $estatura = !empty($_POST['estatura']) ? floatval($_POST['estatura']) : NULL;
+
             $estado_logistico = $conn->real_escape_string($_POST['estado_logistico']);
             $gravedad = $conn->real_escape_string($_POST['gravedad_triaje']);
             $sintoma = $conn->real_escape_string($_POST['sintoma_principal']);
@@ -36,8 +42,28 @@ try {
             $observaciones = !empty(trim($_POST['observaciones'])) ? $conn->real_escape_string($_POST['observaciones']) : NULL;
 
             $conn->begin_transaction();
-            $stmt = $conn->prepare("INSERT INTO victimas (centro_id, usuario_id, nombre_apellido, edad_aproximada, cedula, estado_logistico, gravedad_triaje, sintoma_principal, red_o_apoyo, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iisissssss", $centro_destino, $usuario_id, $nombre, $edad, $cedula, $estado_logistico, $gravedad, $sintoma, $red_apoyo, $observaciones);
+            
+            // CORRECCIÓN: Se añade la coma faltante en "estatura, cedula" y se balancean los marcadores (12 columnas = 12 '?')
+            $stmt = $conn->prepare("INSERT INTO victimas (centro_id, usuario_id, nombre_apellido, edad_aproximada, peso, estatura, cedula, estado_logistico, gravedad_triaje, sintoma_principal, red_o_apoyo, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            
+            // CORRECCIÓN: La cadena de tipos cambia a "iiidddssssss" (o "iiidssssssss" si usas strings para decimales). 
+            // Aquí se asume: centro_id(i), usuario_id(i), edad(i), peso(d/float), estatura(d/float)
+            $stmt->bind_param(
+                "iisdddssssss", 
+                $centro_destino, 
+                $usuario_id, 
+                $nombre, 
+                $edad, 
+                $peso, 
+                $estatura, 
+                $cedula, 
+                $estado_logistico, 
+                $gravedad, 
+                $sintoma, 
+                $red_apoyo, 
+                $observaciones
+            );
+            
             $stmt->execute();
             $conn->commit();
             $stmt->close();
@@ -47,35 +73,55 @@ try {
                 exit;
             }
 
-            echo "<script>alert('¡Paciente registrada con éxito!'); window.location.href='atencion_pacientes.php';</script>";
+            echo "<script>alert('¡Paciente registrado con éxito!'); window.location.href='atencion_pacientes.php';</script>";
             exit;
         }
 
-        // B. ACTUALIZACIÓN PARCIAL DE VÍCTIMA (EDICIÓN SOLICITADA)
+// B. ACTUALIZACIÓN PARCIAL DE VÍCTIMA (EDICIÓN SOLICITADA)
         if (isset($_POST['editar_victima'])) {
             $id_victima = intval($_POST['id_victima']);
             $nombre = !empty(trim($_POST['edit_nombre_apellido'])) ? $conn->real_escape_string($_POST['edit_nombre_apellido']) : 'Desconocido';
             $cedula = !empty(trim($_POST['edit_cedula'])) ? $conn->real_escape_string($_POST['edit_cedula']) : 'X-XXXXXXXXX';
+            
+            // Forzar los tipos correctos en PHP (int y float) en lugar de usar real_escape_string que devuelve strings
+            $edad_aproximada = !empty(trim($_POST['edit_edad'])) ? intval($_POST['edit_edad']) : 0;
+            $peso = !empty(trim($_POST['edit_peso'])) ? floatval($_POST['edit_peso']) : 0.0;
+            $estatura = !empty(trim($_POST['edit_estatura'])) ? floatval($_POST['edit_estatura']) : 0.0;
+
             $estado_logistico = $conn->real_escape_string($_POST['edit_estado_logistico']);
             $gravedad = $conn->real_escape_string($_POST['edit_gravedad_triaje']);
             $observaciones = !empty(trim($_POST['edit_observaciones'])) ? $conn->real_escape_string($_POST['edit_observaciones']) : NULL;
 
-            $conn->begin_transaction();
-            
-            // Si es voluntario, protegemos que solo pueda editar pacientes de su propio centro por seguridad en backend
-            if (!$es_admin) {
-                $check = $conn->query("SELECT id FROM victimas WHERE id = $id_victima AND centro_id = $centro_id");
-                if ($check->num_rows === 0) { throw new Exception("No tienes autorización para modificar este registro."); }
+            try {
+                $conn->begin_transaction();
+                
+                // Si es voluntario, protegemos que solo pueda editar pacientes de su propio centro por seguridad en backend
+                if (!$es_admin) {
+                    $check = $conn->query("SELECT id FROM victimas WHERE id = $id_victima AND centro_id = $centro_id");
+                    if ($check->num_rows === 0) { 
+                        throw new Exception("No tienes autorización para modificar este registro."); 
+                    }
+                }
+
+                // CORRECCIÓN 1: Se incluyen edad_aproximada, peso y estatura en el SET de la consulta SQL (Ahora son 9 marcadores '?')
+                $stmt = $conn->prepare("UPDATE victimas SET nombre_apellido = ?, cedula = ?, edad_aproximada = ?, peso = ?, estatura = ?, estado_logistico = ?, gravedad_triaje = ?, observaciones = ? WHERE id = ?");
+                
+                // CORRECCIÓN 2: Tipos alineados -> nombre(s), cedula(s), edad(i), peso(d), estatura(d), estado(s), gravedad(s), obs(s), id(i)
+                $stmt->bind_param("ssiddsssi", $nombre, $cedula, $edad_aproximada, $peso, $estatura, $estado_logistico, $gravedad, $observaciones, $id_victima);
+                
+                $stmt->execute();
+                $conn->commit();
+                $stmt->close();
+
+                echo "<script>alert('¡Registro del paciente actualizado!'); window.location.href='atencion_pacientes.php';</script>";
+                exit;
+
+            } catch (Exception $e) {
+                // Si algo falla o no está autorizado, cancelamos los cambios de forma segura
+                $conn->rollback();
+                echo "<script>alert('Error: " . $e->getMessage() . "'); window.location.href='atencion_pacientes.php';</script>";
+                exit;
             }
-
-            $stmt = $conn->prepare("UPDATE victimas SET nombre_apellido = ?, cedula = ?, estado_logistico = ?, gravedad_triaje = ?, observaciones = ? WHERE id = ?");
-            $stmt->bind_param("sssssi", $nombre, $cedula, $estado_logistico, $gravedad, $observaciones, $id_victima);
-            $stmt->execute();
-            $conn->commit();
-            $stmt->close();
-
-            echo "<script>alert('¡Registro del paciente actualizado!'); window.location.href='atencion_pacientes.php';</script>";
-            exit;
         }
 
         if (isset($_POST['eliminar_victima'])) {
@@ -195,6 +241,8 @@ include('header.php');
                             <th class="p-3">Estado Logístico</th>
                             <?php if($es_admin): ?> <th class="p-3">Centro</th> <?php endif; ?>
                             <th class="p-3">Edad</th>
+                            <th class="p-3">Peso</th>
+                            <th class="p-3">Estatura</th>
                             <th class="p-3">Gravedad</th>
                             <th class="p-3">Síntoma Principal / Notas</th>
                             <th class="p-3">Red Apoyo</th>
@@ -224,6 +272,8 @@ include('header.php');
                                 <?php endif; ?>
                                 
                                 <td class="p-3 font-semibold text-slate-600"><?= $row['edad_aproximada']; ?> <span class="text-xs text-slate-400 font-normal">años</span></td>
+                                <td class="p-3 font-semibold text-slate-600"><?= $row['peso']; ?> <span class="text-xs text-slate-400 font-normal">kilos</span></td>
+                                <td class="p-3 font-semibold text-slate-600"><?= $row['estatura']; ?> <span class="text-xs text-slate-400 font-normal">m</span></td>
                                 <td class="p-3">
                                     <?php if($row['gravedad_triaje'] === 'Leve'): ?>
                                         <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800">Leve</span>
@@ -350,6 +400,14 @@ include('header.php');
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Edad Aproximada <span class="text-rose-500">*</span>:</label>
                     <input type="number" name="edad_aproximada" required min="0" max="120" placeholder="Ej: 35" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">Peso (Opcional):</label>
+                    <input type="number" step="any" name="peso" min="0" max="120" placeholder="Ej: 50.6" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">Estatura (Opcional):</label>
+                    <input type="number" step="any" name="estatura" min="0" max="120" placeholder="Ej: 1.50" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">¿Tiene Red de Apoyo / Familia? <span class="text-rose-500">*</span>:</label>
@@ -605,11 +663,23 @@ include('header.php');
                     <label class="text-xs font-bold text-slate-600">Cédula de Identidad:</label>
                     <input type="text" name="edit_cedula" id="edit_cedula" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
                 </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">Edad aproximada:</label>
+                    <input type="number" name="edit_edad" id="edit_edad" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">Peso:</label>
+                    <input type="number" step="any" name="edit_peso" id="edit_peso" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">Estatura:</label>
+                    <input type="number" step="any" name="edit_estatura" id="edit_estatura" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                </div>
             </div>
 
             <div class="space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-200/60">
-                <label class="text-xs font-bold text-slate-700 block mb-1">Modificar Estado Logístico <span class="text-rose-500">*</span>:</label>
-                <select name="edit_estado_logistico" id="edit_estado_logistico" required class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                <label class="text-xs font-bold text-slate-700 block mb-1">Modificar Estado Logístico:</label>
+                <select name="edit_estado_logistico" id="edit_estado_logistico" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
                     <option value="Sin Atender">Sin Atender</option>
                     <option value="Atendido">Atendido</option>
                     <option value="Despachado">Despachado</option>
@@ -618,8 +688,8 @@ include('header.php');
             </div>
 
             <div class="space-y-1 bg-rose-50/40 p-3 rounded-xl border border-rose-100">
-                <label class="text-xs font-bold text-rose-900 block mb-1">Reevaluar Gravedad del Triaje <span class="text-rose-500">*</span>:</label>
-                <select name="edit_gravedad_triaje" id="edit_gravedad_triaje" required class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                <label class="text-xs font-bold text-rose-900 block mb-1">Reevaluar Gravedad del Triaje:</label>
+                <select name="edit_gravedad_triaje" id="edit_gravedad_triaje" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
                     <option value="Leve">Leve</option>
                     <option value="Moderado">Moderado</option>
                     <option value="Crítico">Crítico</option>
@@ -656,7 +726,10 @@ include('header.php');
         // Cargar los inputs del formulario usando los valores del objeto JSON
         document.getElementById('edit_id_victima').value = victima.id;
         document.getElementById('edit_nombre_apellido').value = victima.nombre_apellido === 'Desconocido' ? '' : victima.nombre_apellido;
-        document.getElementById('edit_cedula').value = victima.cedula === 'Desconocido' ? '' : victima.cedula;
+        document.getElementById('edit_cedula').value = victima.cedula === 'X-XXXXXXXXX' ? '' : victima.cedula;
+        document.getElementById('edit_edad').value = victima.edad_aproximada === 0 ? '' : victima.edad_aproximada;
+        document.getElementById('edit_peso').value = victima.peso === 0.0 ? '' : victima.peso;
+        document.getElementById('edit_estatura').value = victima.estatura === 0.0 ? '' : victima.estatura;
         document.getElementById('edit_estado_logistico').value = victima.estado_logistico;
         document.getElementById('edit_gravedad_triaje').value = victima.gravedad_triaje;
         document.getElementById('edit_observaciones').value = victima.observaciones || '';
