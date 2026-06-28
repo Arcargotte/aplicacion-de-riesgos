@@ -264,7 +264,7 @@ include('header.php');
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-slate-700">
-                        <?php while($row = $victimas->fetch_assoc()): $row['observaciones'] = htmlspecialchars($row['observaciones'], ENT_QUOTES, 'UTF-8') ?>
+                        <?php while($row = $victimas->fetch_assoc()): ?>
                             <tr class="hover:bg-slate-50/80 transition duration-100">
                                 <td class="p-3">
                                     <span class="font-bold text-slate-900 block"><?= htmlspecialchars($row['nombre_apellido']); ?></span>
@@ -300,9 +300,7 @@ include('header.php');
                                 <td class="p-3 text-xs">
                                     <span class="font-bold text-slate-800 block"><?= htmlspecialchars($row['sintoma_principal']); ?></span>
                                     <?php if($row['observaciones']): ?>
-                                        <span style="display: block; white-space: pre-line;" class="text-slate-400 italic block mt-0.5">
-                                            <?= $row['observaciones'] ?>
-                                            </span>
+                                        <span style="display: block; white-space: pre-line;" class="text-slate-400 italic block mt-0.5"> <?= str_replace('\r\n', '<br>', htmlspecialchars($row['observaciones'], ENT_QUOTES, 'UTF-8')) ?> </span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="p-3 text-xs font-bold">
@@ -365,7 +363,7 @@ include('header.php');
                         <div class="bg-white p-2.5 rounded-lg border border-slate-100 text-xs text-slate-700 space-y-1">
                             <div><strong>Síntoma:</strong> <?= htmlspecialchars($row['sintoma_principal']); ?></div>
                             <?php if($row['observaciones']): ?>
-                                <div class="text-slate-400 italic">"<?= htmlspecialchars($row['observaciones']); ?>"</div>
+                                <div class="text-slate-400 italic">"<?= str_replace('\r\n', '<br>', htmlspecialchars($row['observaciones'], ENT_QUOTES, 'UTF-8')) ?>"</div>
                             <?php endif; ?>
                         </div>
 
@@ -791,7 +789,7 @@ include('header.php');
         document.getElementById('edit_estado_logistico').value = victima.estado_logistico;
         document.getElementById('edit_gravedad_triaje').value = victima.gravedad_triaje;
         document.getElementById('edit_sintoma_principal').value = victima.sintoma_principal;
-        document.getElementById('edit_observaciones').value = victima.observaciones || ''; 
+        document.getElementById('edit_observaciones').value = (victima.observaciones || '').replace(/\\r\\n/g, '\n');
 
         document.getElementById('modal-editar-victima').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
