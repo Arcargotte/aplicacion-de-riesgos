@@ -78,21 +78,12 @@ try {
             exit;
         }
 
-<<<<<<< HEAD
-=======
-        // C. PROCESAR ELIMINACIÓN DE VÍCTIMA
->>>>>>> 45feed2b6582dcd5c29e456546954e49d1a60cb1
         if (isset($_POST['eliminar_victima'])) {
             $id_victima = intval($_POST['id_victima']);
 
             $conn->begin_transaction();
-<<<<<<< HEAD
             
             // Protección de rol: Solo permite eliminar si pertenece a su centro (o si es admin central)
-=======
-
-            // Verificación de perímetro y rol en base de datos para mitigar alteración ID por consola web
->>>>>>> 45feed2b6582dcd5c29e456546954e49d1a60cb1
             if (!$es_admin) {
                 $check = $conn->query("SELECT id FROM victimas WHERE id = $id_victima AND centro_id = $centro_id");
                 if ($check->num_rows === 0) { throw new Exception("No tienes autorización para eliminar este registro."); }
@@ -104,16 +95,10 @@ try {
             $conn->commit();
             $stmt->close();
 
-<<<<<<< HEAD
             echo "<script>alert('¡Registro de víctima eliminado correctamente!'); window.location.href='atencion_victimas.php';</script>";
             exit;
         }
 
-=======
-            echo "<script>alert('¡Registro de la víctima eliminado de forma permanente!'); window.location.href='atencion_victimas.php';</script>";
-            exit;
-        }
->>>>>>> 45feed2b6582dcd5c29e456546954e49d1a60cb1
     }
 
     // 3. CONSULTA FILTRADA SEGÚN EL ROL
@@ -258,18 +243,10 @@ include('header.php');
                                             class="px-2.5 py-1.5 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 rounded-lg transition shadow-2xs cursor-pointer">
                                         ✏️ Editar
                                     </button>
-<<<<<<< HEAD
                                     <form method="POST" action="" class="inline-block" onsubmit="return confirm('¿Estás seguro de que deseas eliminar permanentemente a este paciente?');">
                                         <input type="hidden" name="eliminar_victima" value="1">
                                         <input type="hidden" name="id_victima" value="<?= $row['id'] ?>">
                                         <button type="submit" class="px-2.5 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 rounded-lg transition shadow-sm cursor-pointer">
-=======
-
-                                    <form action="" method="POST" class="inline-block" onsubmit="return confirm('¿Estás completamente seguro de que deseas eliminar permanentemente a esta víctima del registro logístico?');">
-                                        <input type="hidden" name="eliminar_victima" value="1">
-                                        <input type="hidden" name="id_victima" value="<?= $row['id']; ?>">
-                                        <button type="submit" class="px-2.5 py-1.5 text-xs font-bold bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 hover:text-rose-700 rounded-lg transition shadow-2xs cursor-pointer">
->>>>>>> 45feed2b6582dcd5c29e456546954e49d1a60cb1
                                             🗑️ Eliminar
                                         </button>
                                     </form>
