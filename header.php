@@ -66,8 +66,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                     </li>
 
                     <li>
-                        <a href="atencion_victimas.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition py-2 px-2 rounded-lg hover:bg-slate-800 whitespace-nowrap flex items-center gap-1">
-                            Triaje y Víctimas
+                        <a href="atencion_pacientes.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition py-2 px-2 rounded-lg hover:bg-slate-800 whitespace-nowrap flex items-center gap-1">
+                            Triaje y Pacientes
                         </a>
                     </li>
 
@@ -144,7 +144,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                     <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
                     <li><a href="gestion_usuarios.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Gestionar Personal</a></li>
                     <li><a href="gestion_centros.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Centros de Acopio</a></li>
-                    <li><a href="atencion_victimas.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a las víctimas</a></li> 
+                    <li><a href="atencion_pacientes.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a las pacientes</a></li> 
                     <li><a href="reportes_excel.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">
                         Descarga de Reportes
                     </a></li>   
@@ -154,7 +154,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                     <li><a href="recepcion_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Recepción de Donaciones</a></li>
                     <li><a href="formulario_solicitud.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Solicitar Insumos</a></li>
                     <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
-                    <li><a href="atencion_victimas.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a las víctimas</a></li>    
+                    <li><a href="atencion_pacientes.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a los pacientes</a></li>    
                 <?php endif; ?>
                 
                 <li class="pt-2">

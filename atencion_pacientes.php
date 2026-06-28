@@ -2,7 +2,7 @@
 session_start();
 
 // 1. CONTROL DE ACCESO: Entran voluntarios y administradores centrales
-if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['rol'], ['voluntario_centro', 'administrador_centro','administrador_central'])) {
+if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['rol'], ['voluntario', 'administrador_centro','administrador_central'])) {
     header("Location: login.php");
     exit;
 }
@@ -47,7 +47,7 @@ try {
                 exit;
             }
 
-            echo "<script>alert('¡Víctima registrada con éxito!'); window.location.href='atencion_victimas.php';</script>";
+            echo "<script>alert('¡Paciente registrada con éxito!'); window.location.href='atencion_pacientes.php';</script>";
             exit;
         }
 
@@ -74,7 +74,7 @@ try {
             $conn->commit();
             $stmt->close();
 
-            echo "<script>alert('¡Registro de la víctima actualizado!'); window.location.href='atencion_victimas.php';</script>";
+            echo "<script>alert('¡Registro del paciente actualizado!'); window.location.href='atencion_pacientes.php';</script>";
             exit;
         }
 
@@ -95,7 +95,7 @@ try {
             $conn->commit();
             $stmt->close();
 
-            echo "<script>alert('¡Registro de víctima eliminado correctamente!'); window.location.href='atencion_victimas.php';</script>";
+            echo "<script>alert('¡Registro de paciente eliminado correctamente!'); window.location.href='atencion_pacientes.php';</script>";
             exit;
         }
 
@@ -122,7 +122,7 @@ try {
 
 } catch (Exception $e) {
     if (isset($conn) && $conn->ping()) { $conn->rollback(); }
-    echo "<script>alert('❌ Error: " . addslashes($e->getMessage()) . "'); window.location.href='atencion_victimas.php';</script>";
+    echo "<script>alert('❌ Error: " . addslashes($e->getMessage()) . "'); window.location.href='atencion_pacientes.php';</script>";
     exit;
 }
 
@@ -134,7 +134,7 @@ include('header.php');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Atención a Víctimas y Triaje</title>
+    <title>Atención a Pacientes y Triaje</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -154,13 +154,13 @@ include('header.php');
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
             <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                 <?= $es_admin ? ' Monitoreo Global' : ' Triaje de Víctimas' ?>
+                 <?= $es_admin ? ' Monitoreo Global' : ' Triaje de Pacientes' ?>
             </h2>
             <p class="text-sm text-slate-500 font-medium">Control de damnificados, estados médicos y actualización inmediata de filiación</p>
         </div>
         <div>
             <button onclick="abrirModal()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-xl hover:bg-slate-800 shadow-md transition cursor-pointer">
-                ➕ Agregar Víctima
+                ➕ Agregar Paciente
             </button>
         </div>
     </div>
@@ -170,7 +170,7 @@ include('header.php');
         
         <?php if ($victimas->num_rows === 0): ?>
             <div class="text-center py-12 text-slate-400 text-sm font-medium">
-                No hay víctimas registradas bajo estos parámetros de búsqueda.
+                No hay pacientes registradas bajo estos parámetros de búsqueda.
             </div>
         <?php else: ?>
 
@@ -180,7 +180,7 @@ include('header.php');
                                             <span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
                         <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
-                        </svg> Buscar Víctimas:
+                        </svg> Buscar Pacientes:
                        </span>
                 </label>
                 <input type="text" id="buscar-movil-victimas" placeholder="Escribe nombre, cédula, lesión..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-hidden">
@@ -191,13 +191,13 @@ include('header.php');
                 <table id="tabla-victimas" class="w-full text-left text-sm border-collapse display">
                     <thead>
                         <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider">
-                            <th class="p-3">Víctima / Cédula</th>
+                            <th class="p-3">Paciente / Cédula</th>
+                            <th class="p-3">Estado Logístico</th>
                             <?php if($es_admin): ?> <th class="p-3">Centro</th> <?php endif; ?>
                             <th class="p-3">Edad</th>
                             <th class="p-3">Gravedad</th>
                             <th class="p-3">Síntoma Principal / Notas</th>
                             <th class="p-3">Red Apoyo</th>
-                            <th class="p-3">Estado Logístico</th>
                             <th class="p-3 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -208,11 +208,21 @@ include('header.php');
                                     <span class="font-bold text-slate-900 block"><?= htmlspecialchars($row['nombre_apellido']); ?></span>
                                     <span class="text-xs font-mono text-slate-400"><?= htmlspecialchars($row['cedula']); ?></span>
                                 </td>
+                                <td class="p-3 text-xs font-bold">
+                                    <?php 
+                                    $est = $row['estado_logistico'];
+                                    if($est == 'Sin Atender') echo '<span class="px-2 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-lg">En Espera</span>';
+                                    if($est == 'Atendido') echo '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-lg">Estabilizado</span>';
+                                    if($est == 'Despachado') echo '<span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-lg">Dado de Alta</span>';
+                                    if($est == 'Fallecido') echo '<span class="px-2 py-1 bg-neutral-900 text-white rounded-lg">Fallecido</span>';
+                                    ?>
+                                </td>
                                 <?php if($es_admin): ?>
                                     <td class="p-3 font-bold text-xs text-slate-500">
                                         <span class="bg-slate-100 px-2 py-0.5 rounded border border-slate-200"><?= htmlspecialchars($row['centro_nombre']); ?></span>
                                     </td>
                                 <?php endif; ?>
+                                
                                 <td class="p-3 font-semibold text-slate-600"><?= $row['edad_aproximada']; ?> <span class="text-xs text-slate-400 font-normal">años</span></td>
                                 <td class="p-3">
                                     <?php if($row['gravedad_triaje'] === 'Leve'): ?>
@@ -231,15 +241,6 @@ include('header.php');
                                 </td>
                                 <td class="p-3 text-xs font-bold">
                                     <?= $row['red_o_apoyo'] === 'Sí' ? '<span class="text-emerald-600">Acompañado</span>' : '<span class="text-amber-600">Solo / Buscando</span>'; ?>
-                                </td>
-                                <td class="p-3 text-xs font-bold">
-                                    <?php 
-                                    $est = $row['estado_logistico'];
-                                    if($est == 'Sin Atender') echo '<span class="px-2 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-lg">En Espera</span>';
-                                    if($est == 'Atendido') echo '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-lg">Estabilizado</span>';
-                                    if($est == 'Despachado') echo '<span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-lg">Dado de Alta</span>';
-                                    if($est == 'Fallecido') echo '<span class="px-2 py-1 bg-neutral-900 text-white rounded-lg">Fallecido</span>';
-                                    ?>
                                 </td>
                                 <td class="p-3 text-center whitespace-nowrap">
                                     <!-- BOTÓN DE EDICIÓN DINÁMICA -->
@@ -325,7 +326,7 @@ include('header.php');
     <div class="bg-white rounded-2xl border border-slate-200 max-w-xl w-full p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <div>
-                <h3 class="text-base font-black text-slate-900 uppercase tracking-wide">📋 Registro de Víctima</h3>
+                <h3 class="text-base font-black text-slate-900 uppercase tracking-wide">📋 Registro de Pacientes</h3>
                 <p class="text-xs text-slate-500">Completa el formulario de ingreso al sistema.</p>
             </div>
             <button onclick="cerrarModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer">&times;</button>
@@ -405,8 +406,8 @@ include('header.php');
             "pageLength": 10,
             "lengthMenu": [5, 10, 25, 50],
             "language": {
-                "lengthMenu": "Mostrar _MENU_ víctimas",
-                "zeroRecords": "No se encontraron víctimas con esos criterios",
+                "lengthMenu": "Mostrar _MENU_  pacientes",
+                "zeroRecords": "No se encontraron pacientes con esos criterios",
                 "info": "Mostrando página _PAGE_ de _PAGES_",
                 "search": `<span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
                         <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -501,7 +502,7 @@ include('header.php');
                         for (let key in data) { bodyData.append(key, data[key]); }
                         bodyData.append('is_ajax', '1');
 
-                        return fetch('atencion_victimas.php', {
+                        return fetch('atencion_pacientes.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                             body: bodyData
@@ -523,7 +524,7 @@ include('header.php');
                         actualizarContadorOffline();
 
                         if (IDsExitosos.length > 0) {
-                            alert(`✅ ¡Conexión restablecida! Se han sincronizado exitosamente ${IDsExitosos.length} víctimas guardadas offline.`);
+                            alert(`✅ ¡Conexión restablecida! Se han sincronizado exitosamente ${IDsExitosos.length} pacientes guardadas offline.`);
                             window.location.reload(); // Recargar para ver los nuevos datos en la tabla
                         }
                     });
@@ -585,7 +586,7 @@ include('header.php');
     <div class="bg-white rounded-2xl border border-slate-200 max-w-xl w-full p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <div>
-                <h3 class="text-base font-black text-slate-900 uppercase tracking-wide">✏️ Editar Datos de la Víctima</h3>
+                <h3 class="text-base font-black text-slate-900 uppercase tracking-wide">✏️ Editar Datos del Paciente</h3>
                 <p class="text-xs text-slate-500">Actualiza la identidad o cambia el estado logístico/médico del paciente.</p>
             </div>
             <button onclick="cerrarModalEdicion()" class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer">&times;</button>
