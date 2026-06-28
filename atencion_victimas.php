@@ -17,11 +17,11 @@ try {
     $centro_id = intval($_SESSION['centro_id']); 
 
     // ==========================================
-    // PROCESAR PROCESOS POST (REGISTRO, EDICIÓN Y ELIMINACIÓN)
+    // PROCESAR PROCESOS POST (REGISTRO Y EDICIÓN)
     // ==========================================
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
-        // A. REGISTRO DE NUEVA VÍCTIMA (Soporta envío tradicional y AJAX)
+// A. REGISTRO DE NUEVA VÍCTIMA (Soporta envío tradicional y AJAX)
         if (isset($_POST['registrar_victima'])) {
             $es_ajax = (isset($_POST['is_ajax']) && $_POST['is_ajax'] == '1');
             
@@ -51,7 +51,7 @@ try {
             exit;
         }
 
-        // B. ACTUALIZACIÓN PARCIAL DE VÍCTIMA
+        // B. ACTUALIZACIÓN PARCIAL DE VÍCTIMA (EDICIÓN SOLICITADA)
         if (isset($_POST['editar_victima'])) {
             $id_victima = intval($_POST['id_victima']);
             $nombre = !empty(trim($_POST['edit_nombre_apellido'])) ? $conn->real_escape_string($_POST['edit_nombre_apellido']) : 'Desconocido';
@@ -150,6 +150,7 @@ include('header.php');
 
 <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
     
+    <!-- CABECERA -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
             <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -164,6 +165,7 @@ include('header.php');
         </div>
     </div>
 
+    <!-- TABLA PRINCIPAL CARD -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
         
         <?php if ($victimas->num_rows === 0): ?>
@@ -172,9 +174,10 @@ include('header.php');
             </div>
         <?php else: ?>
 
+            <!-- BUSCADOR MÓVIL -->
             <div class="block md:hidden mb-4">
                 <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                                                            <span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
+                                            <span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
                         <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
                         </svg> Buscar Víctimas:
@@ -183,6 +186,7 @@ include('header.php');
                 <input type="text" id="buscar-movil-victimas" placeholder="Escribe nombre, cédula, lesión..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-hidden">
             </div>
 
+            <!-- TABLA ESCRITORIO -->
             <div class="hidden md:block overflow-x-auto">
                 <table id="tabla-victimas" class="w-full text-left text-sm border-collapse display">
                     <thead>
@@ -237,7 +241,8 @@ include('header.php');
                                     if($est == 'Fallecido') echo '<span class="px-2 py-1 bg-neutral-900 text-white rounded-lg">Fallecido</span>';
                                     ?>
                                 </td>
-                                <td class="p-3 text-center whitespace-nowrap space-x-1">
+                                <td class="p-3 text-center whitespace-nowrap">
+                                    <!-- BOTÓN DE EDICIÓN DINÁMICA -->
                                     <button type="button" 
                                             onclick='abrirModalEdicion(<?= json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'
                                             class="px-2.5 py-1.5 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 rounded-lg transition shadow-2xs cursor-pointer">
@@ -257,6 +262,7 @@ include('header.php');
                 </table>
             </div>
 
+            <!-- TARJETAS MÓVILES -->
             <div id="contenedor-movil-victimas" class="grid grid-cols-1 gap-3 md:hidden">
                 <?php 
                 $victimas->data_seek(0); 
@@ -283,15 +289,7 @@ include('header.php');
                                 <div class="text-base font-black text-slate-900 leading-tight"><?= htmlspecialchars($row['nombre_apellido']); ?></div>
                                 <div class="text-xs text-slate-500 mt-0.5"><?= htmlspecialchars($row['cedula']); ?> • <?= $row['edad_aproximada']; ?> años</div>
                             </div>
-                            <div class="flex items-center gap-1">
-                                <button type="button" onclick='abrirModalEdicion(<?= json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)' class="text-sm p-1.5 bg-white border border-slate-200 rounded-lg shadow-2xs">✏️</button>
-                                
-                                <form action="" method="POST" onsubmit="return confirm('¿Eliminar registro de forma permanente?');">
-                                    <input type="hidden" name="eliminar_victima" value="1">
-                                    <input type="hidden" name="id_victima" value="<?= $row['id']; ?>">
-                                    <button type="submit" class="text-sm p-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg shadow-2xs">🗑️</button>
-                                </form>
-                            </div>
+                            <button type="button" onclick='abrirModalEdicion(<?= json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)' class="text-sm p-1.5 bg-white border border-slate-200 rounded-lg shadow-2xs">✏️</button>
                         </div>
                         
                         <div class="bg-white p-2.5 rounded-lg border border-slate-100 text-xs text-slate-700 space-y-1">
@@ -309,6 +307,7 @@ include('header.php');
                 <?php endwhile; ?>
             </div>
 
+            <!-- PAGINACIÓN MÓVIL -->
             <div class="flex md:hidden items-center justify-between mt-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <button id="prev-movil" class="px-3 py-1.5 text-xs font-bold bg-white border border-slate-300 text-slate-700 rounded-lg disabled:opacity-50">Ant.</button>
                 <span id="info-movil" class="text-xs font-semibold text-slate-500">Pág. 1</span>
@@ -319,6 +318,9 @@ include('header.php');
     </div>
 </div>
 
+<!-- ========================================== -->
+<!-- MODAL A: REGISTRO DE NUEVA VÍCTIMA         -->
+<!-- ========================================== -->
 <div id="modal-victima" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
     <div class="bg-white rounded-2xl border border-slate-200 max-w-xl w-full p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -380,4 +382,294 @@ include('header.php');
                     </div>
                     <div class="sm:col-span-2 space-y-1">
                         <label class="text-xs font-bold text-slate-600">Lesión o Síntoma Principal <span class="text-rose-500">*</span>:</label>
-                        <input type="text" name="sintoma_principal" required placeholder="Ej: Fractura, Deshidratación..." class="w-full text-sm bg-white border
+                        <input type="text" name="sintoma_principal" required placeholder="Ej: Fractura, Deshidratación..." class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600">Acción Requerida / Observaciones Adicionales:</label>
+                <textarea name="observaciones" rows="2" placeholder="Ej: Notas..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-hidden"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="cerrarModal()" class="px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-lg transition">Cancelar</button>
+                <button type="submit" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm transition">Guardar Registro</button>
+            </div>
+        </form> 
+        <script>
+            $(document).ready(function() {
+                // Inicialización de DataTable
+    $(document).ready(function() {
+        $('#tabla-victimas').DataTable({
+            "pageLength": 10,
+            "lengthMenu": [5, 10, 25, 50],
+            "language": {
+                "lengthMenu": "Mostrar _MENU_ víctimas",
+                "zeroRecords": "No se encontraron víctimas con esos criterios",
+                "info": "Mostrando página _PAGE_ de _PAGES_",
+                "search": `<span class="inline-flex items-center gap-1.5 font-bold text-slate-500 uppercase tracking-wider">
+                        <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+                        </svg>
+                       </span>`,
+                "paginate": { "next": "Sig.", "previous": "Ant." }
+            },
+            "order": [[0, "desc"]]
+        });
+
+        function inicializarMotorMovil() {
+            let paginaActual = 1;
+            const tarjetasPorPagina = 10;
+
+            function renderizarMovil() {
+                let filtro = $('#buscar-movil-victimas').val().toLowerCase();
+                let tarjetasFiltradas = $('.tarjeta-movil').filter(function() {
+                    return $(this).attr('data-search').includes(filtro);
+                });
+
+                let totalTarjetas = tarjetasFiltradas.length;
+                let totalPaginas = Math.ceil(totalTarjetas / tarjetasPorPagina) || 1;
+
+                if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+
+                $('.tarjeta-movil').addClass('hidden');
+
+                let inicio = (paginaActual - 1) * tarjetasPorPagina;
+                let fin = inicio + tarjetasPorPagina;
+                tarjetasFiltradas.slice(inicio, fin).removeClass('hidden');
+
+                $('#info-movil').text(`Pág. ${paginaActual} de ${totalPaginas}`);
+                $('#prev-movil').prop('disabled', paginaActual === 1);
+                $('#next-movil').prop('disabled', paginaActual === totalPaginas);
+            }
+
+            $('#prev-movil').click(function() { if (paginaActual > 1) { paginaActual--; renderizarMovil(); } });
+            $('#next-movil').click(function() { paginaActual++; renderizarMovil(); });
+            $('#buscar-movil-victimas').on('input', function() { paginaActual = 1; renderizarMovil(); });
+
+            renderizarMovil();
+        }
+
+        if($('#contenedor-movil-victimas').length) {
+            inicializarMotorMovil();
+        }
+    });
+                // Interceptar el envío del formulario de registro
+                const formRegistro = document.getElementById('form-registro-victima');
+                if(formRegistro) {
+                    formRegistro.addEventListener('submit', function(e) {
+                        // Verificar si el dispositivo está offline
+                        if (!navigator.onLine) {
+                            e.preventDefault(); // Detener el envío al servidor en seco
+                            
+                            // Extraer los datos del formulario
+                            const formData = new FormData(formRegistro);
+                            const datosVictima = {};
+                            formData.forEach((value, key) => { datosVictima[key] = value; });
+                            
+                            // Generar un ID único temporal para el LocalStorage
+                            datosVictima['timestamp_local'] = Date.now();
+
+                            // Obtener registros anteriores en cola o iniciar array vacío
+                            let colaOffline = JSON.parse(localStorage.getItem('cola_victimas_offline')) || [];
+                            colaOffline.push(datosVictima);
+                            
+                            // Guardar de vuelta en LocalStorage
+                            localStorage.setItem('cola_victimas_offline', JSON.stringify(colaOffline));
+
+                            alert('⚠️ SIN CONEXIÓN: Los datos se han guardado de forma segura en tu teléfono/computador de manera temporal. Se subirán al servidor automáticamente apenas recuperes señal de internet.');
+                            
+                            formRegistro.reset();
+                            cerrarModal();
+                            actualizarContadorOffline();
+                        }
+                    });
+                }
+
+                // Función para enviar la cola offline al servidor
+                function sincronizarDatosOffline() {
+                    let colaOffline = JSON.parse(localStorage.getItem('cola_victimas_offline')) || [];
+                    if (colaOffline.length === 0) return;
+
+                    console.log(`Intentando sincronizar ${colaOffline.length} registros pendientes...`);
+
+                    // Usamos recursividad/promesas en serie para no sobrecargar el servidor
+                    let promesas = colaOffline.map(data => {
+                        // Agregar flag indicando que es una petición AJAX interna
+                        let bodyData = new URLSearchParams();
+                        for (let key in data) { bodyData.append(key, data[key]); }
+                        bodyData.append('is_ajax', '1');
+
+                        return fetch('atencion_victimas.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: bodyData
+                        })
+                        .then(res => res.json())
+                        .then(resData => {
+                            if(resData.status === 'success') { return data.timestamp_local; }
+                            return null; 
+                        })
+                        .catch(() => null); // Si vuelve a fallar la red en pleno envío, retorna null
+                    });
+
+                    Promise.all(promesas).then(resultados => {
+                        // Filtrar de la cola los registros que se subieron con éxito
+                        let IDsExitosos = resultados.filter(id => id !== null);
+                        let nuevaCola = colaOffline.filter(item => !IDsExitosos.includes(item.timestamp_local));
+                        
+                        localStorage.setItem('cola_victimas_offline', JSON.stringify(nuevaCola));
+                        actualizarContadorOffline();
+
+                        if (IDsExitosos.length > 0) {
+                            alert(`✅ ¡Conexión restablecida! Se han sincronizado exitosamente ${IDsExitosos.length} víctimas guardadas offline.`);
+                            window.location.reload(); // Recargar para ver los nuevos datos en la tabla
+                        }
+                    });
+                }
+
+                // Función visual para alertar al voluntario de registros pendientes en la UI
+                function actualizarContadorOffline() {
+                    let colaOffline = JSON.parse(localStorage.getItem('cola_victimas_offline')) || [];
+                    let banner = document.getElementById('banner-offline');
+                    
+                    if (colaOffline.length > 0) {
+                        if (!banner) {
+                            $('.max-w-7xl').first().prepend(`
+                                <div id="banner-offline" class="mb-4 bg-amber-500 text-white px-4 py-3 rounded-xl font-bold text-sm flex justify-between items-center animate-pulse">
+                                    <span>⏳ Tienes ${colaOffline.length} registros pendientes por sincronizar debido a fallas de red.</span>
+                                    <button id="btn-sync-manual" class="bg-white text-slate-900 px-2.5 py-1 rounded-lg text-xs cursor-pointer">Sincronizar Ahora</button>
+                                </div>
+                            `);
+                        } else {
+                            banner.querySelector('span').innerText = `⏳ Tienes ${colaOffline.length} registros pendientes por sincronizar debido a fallas de red.`;
+                        }
+                    } else if (banner) {
+                        banner.remove();
+                    }
+                }
+
+                // Escuchadores de red del navegador globales
+                window.addEventListener('online', sincronizarDatosOffline);
+                $(document).on('click', '#btn-sync-manual', sincronizarDatosOffline);
+
+                // Ejecutar revisiones iniciales al cargar la página
+                actualizarContadorOffline();
+                if (navigator.onLine) { sincronizarDatosOffline(); }
+            });
+
+            // Controladores de modales
+            function abrirModal() { document.getElementById('modal-victima').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+            function cerrarModal() { document.getElementById('modal-victima').classList.add('hidden'); document.body.style.overflow = 'auto'; }
+            function abrirModalEdicion(victima) {
+                document.getElementById('edit_id_victima').value = victima.id;
+                document.getElementById('edit_nombre_apellido').value = victima.nombre_apellido === 'Desconocido' ? '' : victima.nombre_apellido;
+                document.getElementById('edit_cedula').value = victima.cedula === 'Desconocido' ? '' : victima.cedula;
+                document.getElementById('edit_estado_logistico').value = victima.estado_logistico;
+                document.getElementById('edit_gravedad_triaje').value = victima.gravedad_triaje;
+                document.getElementById('edit_observaciones').value = victima.observaciones || '';
+                document.getElementById('modal-editar-victima').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+            function cerrarModalEdicion() { document.getElementById('modal-editar-victima').classList.add('hidden'); document.body.style.overflow = 'auto'; }
+        </script>
+    </div>
+</div>
+
+
+<!-- ========================================== -->
+<!-- MODAL B: EDICIÓN / ACTUALIZACIÓN DE VÍCTIMA  -->
+<!-- ========================================== -->
+<div id="modal-editar-victima" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="bg-white rounded-2xl border border-slate-200 max-w-xl w-full p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div>
+                <h3 class="text-base font-black text-slate-900 uppercase tracking-wide">✏️ Editar Datos de la Víctima</h3>
+                <p class="text-xs text-slate-500">Actualiza la identidad o cambia el estado logístico/médico del paciente.</p>
+            </div>
+            <button onclick="cerrarModalEdicion()" class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <form action="" method="POST" class="space-y-4 text-left">
+            <input type="hidden" name="editar_victima" value="1">
+            <input type="hidden" name="id_victima" id="edit_id_victima">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">Nombre y Apellido:</label>
+                    <input type="text" name="edit_nombre_apellido" id="edit_nombre_apellido" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">Cédula de Identidad:</label>
+                    <input type="text" name="edit_cedula" id="edit_cedula" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                </div>
+            </div>
+
+            <div class="space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                <label class="text-xs font-bold text-slate-700 block mb-1">Modificar Estado Logístico <span class="text-rose-500">*</span>:</label>
+                <select name="edit_estado_logistico" id="edit_estado_logistico" required class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                    <option value="Sin Atender">Sin Atender</option>
+                    <option value="Atendido">Atendido</option>
+                    <option value="Despachado">Despachado</option>
+                    <option value="Fallecido">Fallecido</option>
+                </select>
+            </div>
+
+            <div class="space-y-1 bg-rose-50/40 p-3 rounded-xl border border-rose-100">
+                <label class="text-xs font-bold text-rose-900 block mb-1">Reevaluar Gravedad del Triaje <span class="text-rose-500">*</span>:</label>
+                <select name="edit_gravedad_triaje" id="edit_gravedad_triaje" required class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                    <option value="Leve">Leve</option>
+                    <option value="Moderado">Moderado</option>
+                    <option value="Crítico">Crítico</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600">Acción Requerida / Observaciones Adicionales:</label>
+                <textarea name="edit_observaciones" id="edit_observaciones" rows="2" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-hidden"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="cerrarModalEdicion()" class="px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-lg transition">Cancelar</button>
+                <button type="submit" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm transition">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+    // Controladores del Modal A (Registro)
+    function abrirModal() {
+        document.getElementById('modal-victima').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function cerrarModal() {
+        document.getElementById('modal-victima').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Controladores del Modal B (Edición Dinámica)
+    function abrirModalEdicion(victima) {
+        // Cargar los inputs del formulario usando los valores del objeto JSON
+        document.getElementById('edit_id_victima').value = victima.id;
+        document.getElementById('edit_nombre_apellido').value = victima.nombre_apellido === 'Desconocido' ? '' : victima.nombre_apellido;
+        document.getElementById('edit_cedula').value = victima.cedula === 'Desconocido' ? '' : victima.cedula;
+        document.getElementById('edit_estado_logistico').value = victima.estado_logistico;
+        document.getElementById('edit_gravedad_triaje').value = victima.gravedad_triaje;
+        document.getElementById('edit_observaciones').value = victima.observaciones || '';
+
+        document.getElementById('modal-editar-victima').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalEdicion() {
+        document.getElementById('modal-editar-victima').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+</script>
+
+</body>
+</html>
+<?php $conn->close(); ?>
