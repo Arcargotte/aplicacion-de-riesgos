@@ -80,6 +80,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                             <div x-show="open" x-cloak class="absolute left-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
                                 <a href="gestion_usuarios.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Gestionar Personal</a>
                                 <a href="gestion_centros.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Centros de Acopio</a>
+                                <div class="border-t border-slate-100 my-1"></div>
+                                <a href="reportes_excel.php" class="block px-4 py-2 text-xs lg:text-sm text-emerald-700 hover:bg-emerald-50 font-bold flex items-center gap-2">
+                                    Descarga de Reportes
+                                </a>
                             </div>
                         </li>
                     <?php endif; ?>
@@ -140,7 +144,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                     <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
                     <li><a href="gestion_usuarios.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Gestionar Personal</a></li>
                     <li><a href="gestion_centros.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Centros de Acopio</a></li>
-                    <li><a href="atencion_victimas.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a las víctimas</a></li>    
+                    <li><a href="atencion_victimas.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a las víctimas</a></li> 
+                    <li><a href="reportes_excel.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">
+                        Descarga de Reportes
+                    </a></li>   
                 <?php else: ?>
                     <li><a href="panel_central.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Insumos</a></li>
                     <li><a href="formulario_donacion.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Registrar Donación</a></li>
