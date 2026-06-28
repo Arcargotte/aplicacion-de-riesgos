@@ -357,7 +357,14 @@ include('header.php');
                                 <div class="text-base font-black text-slate-900 leading-tight"><?= htmlspecialchars($row['nombre_apellido']); ?></div>
                                 <div class="text-xs text-slate-500 mt-0.5"><?= htmlspecialchars($row['cedula']); ?> • <?= $row['edad_aproximada']; ?> años</div>
                             </div>
-                            <button type="button" onclick='abrirModalEdicion(<?= json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)' class="text-sm p-1.5 bg-white border border-slate-200 rounded-lg shadow-2xs">✏️</button>
+                            <div>
+                                <button type="button" onclick='abrirModalEdicion(<?= json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)' class="text-sm p-1.5 bg-white border border-slate-200 rounded-lg shadow-2xs">✏️</button>
+                                <form method="POST" action="" class="inline-block" onsubmit="return confirm('¿Estás seguro de que deseas eliminar permanentemente a este paciente?');">
+                                    <input type="hidden" name="eliminar_victima" value="1">
+                                    <input type="hidden" name="id_victima" value="<?= $row['id'] ?>">
+                                    <button type="submit" class="text-sm p-1.5 bg-white border border-slate-200 rounded-lg shadow-2xs">🗑️</button>
+                                </form>
+                            </div>
                         </div>
                         
                         <div class="bg-white p-2.5 rounded-lg border border-slate-100 text-xs text-slate-700 space-y-1">
