@@ -219,6 +219,7 @@ include('header.php');
                             <option value="litros">Litros (L)</option>
                             <option value="cajas">Cajas</option>
                             <option value="paquetes">Paquetes</option>
+                            <option value="bolsas">Bolsas</option>
                         </select>
                     </div>
                 </div>
