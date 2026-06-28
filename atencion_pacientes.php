@@ -93,6 +93,7 @@ if (isset($_POST['registrar_victima'])) {
             $peso = !empty(trim($_POST['edit_peso'])) ? floatval($_POST['edit_peso']) : 0.0;
             $estatura = !empty(trim($_POST['edit_estatura'])) ? floatval($_POST['edit_estatura']) : 0.0;
             $contacto = !empty(trim($_POST['edit_contacto'])) ? $conn->real_escape_string($_POST['edit_contacto']) : 'XXXX-XXXXXXX';
+            $sintoma = $conn->real_escape_string($_POST['edit_sintoma_principal']);
 
             $estado_logistico = $conn->real_escape_string($_POST['edit_estado_logistico']);
             $red_apoyo = $conn->real_escape_string($_POST['edit_red_o_apoyo']);
@@ -111,10 +112,10 @@ if (isset($_POST['registrar_victima'])) {
                 }
 
                 // CORRECCIÓN 1: Se incluyen edad_aproximada, peso y estatura en el SET de la consulta SQL (Ahora son 9 marcadores '?')
-                $stmt = $conn->prepare("UPDATE victimas SET nombre_apellido = ?, cedula = ?, edad_aproximada = ?, edad_unidad = ?, peso = ?, estatura = ?, estado_logistico = ?, red_o_apoyo = ?, gravedad_triaje = ?, contacto = ?, observaciones = ? WHERE id = ?");
+                $stmt = $conn->prepare("UPDATE victimas SET nombre_apellido = ?, cedula = ?, edad_aproximada = ?, edad_unidad = ?, peso = ?, estatura = ?, estado_logistico = ?, red_o_apoyo = ?, gravedad_triaje = ?, sintoma_principal = ?, contacto = ?, observaciones = ? WHERE id = ?");
                 
                 // CORRECCIÓN 2: Tipos alineados -> nombre(s), cedula(s), edad(i), peso(d), estatura(d), estado(s), gravedad(s), obs(s), id(i)
-                $stmt->bind_param("ssisddsssssi", $nombre, $cedula, $edad_aproximada, $edad_unidad, $peso, $estatura, $estado_logistico, $red_apoyo, $gravedad, $contacto, $observaciones, $id_victima);
+                $stmt->bind_param("ssisddssssssi", $nombre, $cedula, $edad_aproximada, $edad_unidad, $peso, $estatura, $estado_logistico, $red_apoyo, $gravedad, $sintoma, $contacto, $observaciones, $id_victima);
                 
                 $stmt->execute();
                 $conn->commit();
@@ -263,7 +264,7 @@ include('header.php');
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-slate-700">
-                        <?php while($row = $victimas->fetch_assoc()): ?>
+                        <?php while($row = $victimas->fetch_assoc()): $row['observaciones'] = htmlspecialchars($row['observaciones'], ENT_QUOTES, 'UTF-8') ?>
                             <tr class="hover:bg-slate-50/80 transition duration-100">
                                 <td class="p-3">
                                     <span class="font-bold text-slate-900 block"><?= htmlspecialchars($row['nombre_apellido']); ?></span>
@@ -299,7 +300,9 @@ include('header.php');
                                 <td class="p-3 text-xs">
                                     <span class="font-bold text-slate-800 block"><?= htmlspecialchars($row['sintoma_principal']); ?></span>
                                     <?php if($row['observaciones']): ?>
-                                        <span class="text-slate-400 italic block mt-0.5">"<?= htmlspecialchars($row['observaciones']); ?>"</span>
+                                        <span style="display: block; white-space: pre-line;" class="text-slate-400 italic block mt-0.5">
+                                            <?= $row['observaciones'] ?>
+                                            </span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="p-3 text-xs font-bold">
@@ -366,10 +369,16 @@ include('header.php');
                             <?php endif; ?>
                         </div>
 
+                        <div class="flex gap-3 items-center border-t border-slate-200/40 pt-1 text-[11px]">
+                            <span>Contacto: </span>
+                            <strong><?= htmlspecialchars($row['contacto']); ?></strong>
+                        </div>
+                        
                         <div class="flex justify-between items-center border-t border-slate-200/40 pt-2 text-[11px]">
                             <span><?= $row['red_o_apoyo'] === 'Sí' ? 'Acompañado' : 'Buscando Familiar'; ?></span>
                             <strong><?= htmlspecialchars($row['estado_logistico']); ?></strong>
                         </div>
+                        
                     </div>
                 <?php endwhile; ?>
             </div>
@@ -408,7 +417,7 @@ include('header.php');
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Cédula de Identidad (Opcional):</label>
-                    <input type="text" name="cedula" placeholder="Desconocido" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                    <input type="text" inputmode="numeric" name="cedula" placeholder="Desconocido" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
                 </div>
             </div>
 
@@ -440,7 +449,7 @@ include('header.php');
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs text-slate-600">Contacto (Opcional):</label>
-                    <input type="text" name="contacto" placeholder="Ej: 041X-XXXXXXX" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                    <input type="text" inputmode="numeric" name="contacto" placeholder="Ej: 041XXXXXXXX" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
                 </div>
             </div>
 
@@ -687,7 +696,7 @@ include('header.php');
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Cédula de Identidad:</label>
-                    <input type="text" name="edit_cedula" id="edit_cedula" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                    <input type="text" inputmode="numeric" name="edit_cedula" id="edit_cedula" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Edad aproximada:</label>
@@ -709,7 +718,7 @@ include('header.php');
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-600">Contacto:</label>
-                    <input type="text" name="edit_contacto" id="edit_contacto" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                    <input type="text" inputmode="numeric" name="edit_contacto" id="edit_contacto" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
                 </div>
             </div>
             <div class="space-y-1">
@@ -736,6 +745,10 @@ include('header.php');
                     <option value="Moderado">Moderado</option>
                     <option value="Crítico">Crítico</option>
                 </select>
+                    <div class="sm:col-span-2 space-y-1">
+                        <label class="text-xs font-bold text-slate-600">Lesión o Síntoma Principal <span class="text-rose-500">*</span>:</label>
+                        <input type="text" name="edit_sintoma_principal" id="edit_sintoma_principal" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-hidden">
+                    </div>
             </div>
 
             <div class="space-y-1">
@@ -777,6 +790,7 @@ include('header.php');
         document.getElementById('edit_red_o_apoyo').value = victima.red_o_apoyo;
         document.getElementById('edit_estado_logistico').value = victima.estado_logistico;
         document.getElementById('edit_gravedad_triaje').value = victima.gravedad_triaje;
+        document.getElementById('edit_sintoma_principal').value = victima.sintoma_principal;
         document.getElementById('edit_observaciones').value = victima.observaciones || ''; 
 
         document.getElementById('modal-editar-victima').classList.remove('hidden');
