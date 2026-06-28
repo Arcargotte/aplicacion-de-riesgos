@@ -77,6 +77,28 @@ try {
             echo "<script>alert('¡Registro de la víctima actualizado!'); window.location.href='atencion_victimas.php';</script>";
             exit;
         }
+
+        if (isset($_POST['eliminar_victima'])) {
+            $id_victima = intval($_POST['id_victima']);
+
+            $conn->begin_transaction();
+            
+            // Protección de rol: Solo permite eliminar si pertenece a su centro (o si es admin central)
+            if (!$es_admin) {
+                $check = $conn->query("SELECT id FROM victimas WHERE id = $id_victima AND centro_id = $centro_id");
+                if ($check->num_rows === 0) { throw new Exception("No tienes autorización para eliminar este registro."); }
+            }
+
+            $stmt = $conn->prepare("DELETE FROM victimas WHERE id = ?");
+            $stmt->bind_param("i", $id_victima);
+            $stmt->execute();
+            $conn->commit();
+            $stmt->close();
+
+            echo "<script>alert('¡Registro de víctima eliminado correctamente!'); window.location.href='atencion_victimas.php';</script>";
+            exit;
+        }
+
     }
 
     // 3. CONSULTA FILTRADA SEGÚN EL ROL
@@ -226,6 +248,13 @@ include('header.php');
                                             class="px-2.5 py-1.5 text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 rounded-lg transition shadow-2xs cursor-pointer">
                                         ✏️ Editar
                                     </button>
+                                    <form method="POST" action="" class="inline-block" onsubmit="return confirm('¿Estás seguro de que deseas eliminar permanentemente a este paciente?');">
+                                        <input type="hidden" name="eliminar_victima" value="1">
+                                        <input type="hidden" name="id_victima" value="<?= $row['id'] ?>">
+                                        <button type="submit" class="px-2.5 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 rounded-lg transition shadow-sm cursor-pointer">
+                                            🗑️ Eliminar
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
