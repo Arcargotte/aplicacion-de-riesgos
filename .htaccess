@@ -5,7 +5,12 @@ RewriteRule ^crear_usuario$ crear_usuario.php
 RewriteRule ^formulario_donacion$ formulario_donacion.php
 RewriteRule ^formulario_solicitud$ formulario_solicitud.php
 RewriteRule ^gestion_usuarios$ gestion_usuarios.php
+RewriteRule ^gestion_solicitudes$ gestion_solicitudes.php
 RewriteRule ^historico_donaciones$ historico_donaciones.php
 RewriteRule ^login$ login.php
 RewriteRule ^panel_central$ panel_central.php
 RewriteRule ^recepcion_donaciones$ recepcion_donaciones.php
+RewriteRule ^atencion_pacientes$ atencion_pacientes.php
+RewriteRule ^gestion_centros$ gestion_centros.php
+RewriteRule ^reportes_excel$ reportes_excel.php
+RewriteRule ^procesar_excel$ procesar_excel.php

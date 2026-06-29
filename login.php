@@ -6,9 +6,9 @@ require_once('conexion.php');
 if (isset($_SESSION['usuario_id'])) {
 
     if ($_SESSION['rol_id'] == 1) {
-        header("Location: panel_central.php");
+        header("Location: panel_central");
     } else {
-        header("Location: formulario_solicitud.php");
+        header("Location: panel_central");
     }
 
     exit;
@@ -67,9 +67,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_SESSION['centro_id']  = $user['centro_id'];
 
             if ($user['rol_id'] == 1) {
-                header("Location: panel_central.php");
+                header("Location: panel_central");
             } else {
-                header("Location: formulario_solicitud.php");
+                header("Location: panel_central");
             }
 
             exit;
@@ -112,7 +112,7 @@ $conn->close();
             </div>
         <?php endif; ?>
 
-        <form action="login.php" method="POST" class="space-y-5">
+        <form action="login" method="POST" class="space-y-5">
             <div>
                 <label for="username" class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">Usuario</label>
                 <input type="text" id="username" name="username" required 

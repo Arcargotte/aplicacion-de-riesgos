@@ -2,7 +2,7 @@
 session_start();
 // Control de acceso
 if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['centro_id'])) {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -107,7 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         $conn->commit();
-        echo "<script>alert('¡Movimiento registrado correctamente en el historial!'); window.location.href='panel_central.php';</script>";
+        echo "<script>alert('¡Movimiento registrado correctamente en el historial!'); window.location.href='panel_central';</script>";
     } catch (Exception $e) {
         $conn->rollback();
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "');</script>";

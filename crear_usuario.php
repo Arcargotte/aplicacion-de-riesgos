@@ -2,7 +2,7 @@
 session_start();
 // Control de acceso: Solo administradores centrales
 if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_central') {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -166,7 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
 
             <div class="border-t border-slate-100 pt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                <a href="gestion_usuarios.php" 
+                <a href="gestion_usuarios" 
                    class="w-full sm:w-auto text-center bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold py-3 px-6 rounded-xl transition cursor-pointer">
                     Cancelar
                 </a>

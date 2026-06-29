@@ -2,7 +2,7 @@
 session_start();
 // Control de acceso: Solo administradores centrales
 if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_central') {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -199,7 +199,7 @@ try {
                     <button @click="modalCrear = false" class="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">&times;</button>
                 </div>
 
-                <form action="gestion_centros.php" method="POST" class="space-y-4">
+                <form action="gestion_centros" method="POST" class="space-y-4">
                     <input type="hidden" name="accion_crear" value="1">
 
                     <div class="flex flex-col gap-1">
@@ -246,7 +246,7 @@ try {
                     <button @click="modalEditar = false" class="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">&times;</button>
                 </div>
 
-                <form action="gestion_centros.php" method="POST" class="space-y-4">
+                <form action="gestion_centros" method="POST" class="space-y-4">
                     <input type="hidden" name="accion_editar" value="1">
                     <input type="hidden" name="centro_id" :value="centroEdit.id">
 

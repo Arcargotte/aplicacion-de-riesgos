@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -151,7 +151,7 @@ if ($centro['es_sede_principal']) {
             </h2>
             <p class="text-sm text-slate-500 font-medium">Panel General de Control de Inventario</p>
         </div>
-        <a href="agregar_insumo.php" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition text-center shadow-md shadow-sky-600/10">
+        <a href="agregar_insumo" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition text-center shadow-md shadow-sky-600/10">
             Agregar Insumo
         </a>
     </div>

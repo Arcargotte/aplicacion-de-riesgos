@@ -2,7 +2,7 @@
 session_start();
 // Control de acceso: solo voluntarios (o administradores de centro)
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -62,7 +62,7 @@ try {
         }
         
         $conn->commit();
-        echo "<script>alert('¡Solicitud enviada a Sede Central correctamente!'); window.location.href='formulario_solicitud.php';</script>";
+        echo "<script>alert('¡Solicitud enviada a Sede Central correctamente!'); window.location.href='formulario_solicitud';</script>";
         exit;
     }
 
@@ -71,7 +71,7 @@ try {
 
 } catch (Exception $e) {
     if (isset($conn) && $conn->ping()) { $conn->rollback(); }
-    echo "<script>alert('Error en el sistema: " . addslashes($e->getMessage()) . "'); window.location.href='formulario_solicitud.php';</script>";
+    echo "<script>alert('Error en el sistema: " . addslashes($e->getMessage()) . "'); window.location.href='formulario_solicitud';</script>";
     exit;
 }
 

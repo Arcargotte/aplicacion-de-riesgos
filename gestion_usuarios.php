@@ -2,7 +2,7 @@
 session_start();
 // Control de acceso: Solo administradores centrales
 if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_central') {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -116,7 +116,7 @@ while($user = $resultado_usuarios->fetch_assoc()) {
             <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Control de Personal y Roles</h2>
             <p class="text-sm text-slate-500 font-medium">Administra las credenciales de acceso de cada centro de acopio</p>
         </div>
-        <a href="crear_usuario.php" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition text-center shadow-md shadow-sky-600/10">
+        <a href="crear_usuario" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition text-center shadow-md shadow-sky-600/10">
         Registrar Nuevo Usuario
         </a>
     </div>
@@ -226,7 +226,7 @@ while($user = $resultado_usuarios->fetch_assoc()) {
                     <button @click="modalEditar = false" class="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">&times;</button>
                 </div>
 
-                <form action="gestion_usuarios.php" method="POST" class="space-y-4">
+                <form action="gestion_usuarios" method="POST" class="space-y-4">
                     <input type="hidden" name="accion_editar" value="1">
                     <input type="hidden" name="usuario_id" :value="userEdit.id">
 
@@ -290,7 +290,7 @@ while($user = $resultado_usuarios->fetch_assoc()) {
                     </p>
                 </div>
 
-                <form action="gestion_usuarios.php" method="POST">
+                <form action="gestion_usuarios" method="POST">
                     <input type="hidden" name="accion_eliminar" value="1">
                     <input type="hidden" name="usuario_id" :value="userDelete.id">
 

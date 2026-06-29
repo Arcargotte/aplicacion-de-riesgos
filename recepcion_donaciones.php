@@ -2,7 +2,7 @@
 session_start();
 // Control de acceso
 if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['centro_id'])) {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -149,7 +149,7 @@ include('header.php');
                 return;
             }
             try {
-                let response = await fetch(`recepcion_donaciones.php?sugerir_insumo=${encodeURIComponent(fila.nombre)}`);
+                let response = await fetch(`recepcion_donaciones?sugerir_insumo=${encodeURIComponent(fila.nombre)}`);
                 fila.sugerencias = await response.json();
                 fila.mostrarLista = fila.sugerencias.length > 0;
                 
@@ -187,7 +187,7 @@ include('header.php');
                 </div>
             <?php endif; ?>
 
-            <form action="recepcion_donaciones.php" method="POST" class="space-y-6">
+            <form action="recepcion_donaciones" method="POST" class="space-y-6">
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
                     <div class="flex flex-col gap-1">

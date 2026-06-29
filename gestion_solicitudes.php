@@ -2,7 +2,7 @@
 session_start();
 // Control estricto: Solo administradores de la sede central gestionan solicitudes
 if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_central') {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -109,12 +109,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion'])) {
         }
 
         $conn->commit();
-        echo "<script>alert('$msg'); window.location.href='gestion_solicitudes.php';</script>";
+        echo "<script>alert('$msg'); window.location.href='gestion_solicitudes';</script>";
         exit;
 
     } catch (Exception $e) {
         $conn->rollback();
-        echo "<script>alert('⚠️ Error: " . addslashes($e->getMessage()) . "'); window.location.href='gestion_solicitudes.php';</script>";
+        echo "<script>alert('⚠️ Error: " . addslashes($e->getMessage()) . "'); window.location.href='gestion_solicitudes';</script>";
         exit;
     }
 }

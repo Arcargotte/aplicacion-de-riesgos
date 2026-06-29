@@ -4,13 +4,13 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_destroy();
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 ?>
@@ -30,7 +30,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         <div class="flex justify-between items-center h-16 gap-4">
             
             <div class="flex-shrink-0">
-                <a href="panel_central.php" class="flex items-center">
+                <a href="panel_central" class="flex items-center">
                     <img src="assets/logo_app.png" alt="Logo ONG" class="h-10 w-auto object-contain">
                 </a>
             </div>
@@ -45,11 +45,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                             <svg class="w-3 h-3 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-cloak class="absolute left-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                            <a href="panel_central.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Inventario de Insumos</a>
+                            <a href="panel_central" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Inventario de Insumos</a>
                             <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
-                                <a href="gestion_solicitudes.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Bandeja de Solicitudes</a>
+                                <a href="gestion_solicitudes" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Bandeja de Solicitudes</a>
                             <?php else: ?>
-                                <a href="formulario_solicitud.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Solicitar Insumos</a>
+                                <a href="formulario_solicitud" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Solicitar Insumos</a>
                             <?php endif; ?>
                         </div>
                     </li>
@@ -60,14 +60,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                             <svg class="w-3 h-3 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-cloak class="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                            <a href="formulario_donacion.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Registrar Donación</a>
-                            <a href="recepcion_donaciones.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Recepción en Tránsito</a>
-                            <a href="historico_donaciones.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Historial de Entregas</a>
+                            <a href="formulario_donacion" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Registrar Donación</a>
+                            <a href="recepcion_donaciones" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Recepción en Tránsito</a>
+                            <a href="historico_donaciones" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Historial de Entregas</a>
                         </div>
                     </li>
 
                     <li>
-                        <a href="atencion_pacientes.php" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition py-2 px-2 rounded-lg hover:bg-slate-800 whitespace-nowrap flex items-center gap-1">
+                        <a href="atencion_pacientes" class="text-slate-300 hover:text-sky-400 text-xs lg:text-sm font-bold tracking-wide transition py-2 px-2 rounded-lg hover:bg-slate-800 whitespace-nowrap flex items-center gap-1">
                             Triaje y Pacientes
                         </a>
                     </li>
@@ -79,10 +79,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
                                 <svg class="w-3 h-3 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                             <div x-show="open" x-cloak class="absolute left-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                                <a href="gestion_usuarios.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Gestionar Personal</a>
-                                <a href="gestion_centros.php" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Centros de Acopio</a>
+                                <a href="gestion_usuarios" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Gestionar Personal</a>
+                                <a href="gestion_centros" class="block px-4 py-2 text-xs lg:text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-semibold">Centros de Acopio</a>
                                 <div class="border-t border-slate-100 my-1"></div>
-                                <a href="reportes_excel.php" class="block px-4 py-2 text-xs lg:text-sm text-emerald-700 hover:bg-emerald-50 font-bold flex items-center gap-2">
+                                <a href="reportes_excel" class="block px-4 py-2 text-xs lg:text-sm text-emerald-700 hover:bg-emerald-50 font-bold flex items-center gap-2">
                                     Descarga de Reportes
                                 </a>
                             </div>
@@ -138,24 +138,24 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         <nav class="space-y-2">
             <ul class="flex flex-col gap-1 list-none m-0 p-0">
                 <?php if ($_SESSION['rol'] === 'administrador_central'): ?>
-                    <li><a href="panel_central.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Insumos</a></li>
-                    <li><a href="formulario_donacion.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Registrar Donación</a></li>
-                    <li><a href="gestion_solicitudes.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Solicitudes</a></li>
-                    <li><a href="recepcion_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Recepción de Donaciones</a></li>
-                    <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
-                    <li><a href="gestion_usuarios.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Gestionar Personal</a></li>
-                    <li><a href="gestion_centros.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Centros de Acopio</a></li>
-                    <li><a href="atencion_pacientes.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a las pacientes</a></li> 
-                    <li><a href="reportes_excel.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">
+                    <li><a href="panel_central" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Insumos</a></li>
+                    <li><a href="formulario_donacion" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Registrar Donación</a></li>
+                    <li><a href="gestion_solicitudes" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Solicitudes</a></li>
+                    <li><a href="recepcion_donaciones" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Recepción de Donaciones</a></li>
+                    <li><a href="historico_donaciones" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
+                    <li><a href="gestion_usuarios" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Gestionar Personal</a></li>
+                    <li><a href="gestion_centros" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Centros de Acopio</a></li>
+                    <li><a href="atencion_pacientes" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a las pacientes</a></li> 
+                    <li><a href="reportes_excel" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">
                         Descarga de Reportes
                     </a></li>   
                 <?php else: ?>
-                    <li><a href="panel_central.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Insumos</a></li>
-                    <li><a href="formulario_donacion.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Registrar Donación</a></li>
-                    <li><a href="recepcion_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Recepción de Donaciones</a></li>
-                    <li><a href="formulario_solicitud.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Solicitar Insumos</a></li>
-                    <li><a href="historico_donaciones.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
-                    <li><a href="atencion_pacientes.php" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a los pacientes</a></li>    
+                    <li><a href="panel_central" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Insumos</a></li>
+                    <li><a href="formulario_donacion" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Registrar Donación</a></li>
+                    <li><a href="recepcion_donaciones" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Recepción de Donaciones</a></li>
+                    <li><a href="formulario_solicitud" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Solicitar Insumos</a></li>
+                    <li><a href="historico_donaciones" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Historial Entregas</a></li>
+                    <li><a href="atencion_pacientes" class="block p-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition">Atención a los pacientes</a></li>    
                 <?php endif; ?>
                 
                 <li class="pt-2">

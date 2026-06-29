@@ -3,7 +3,7 @@ session_start();
 
 // 1. CONTROL DE ACCESO: Entran voluntarios y administradores centrales
 if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['rol'], ['voluntario', 'administrador_centro','administrador_central'])) {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -77,7 +77,7 @@ if (isset($_POST['registrar_victima'])) {
                 exit;
             }
 
-            echo "<script>alert('¡Paciente registrado con éxito!'); window.location.href='atencion_pacientes.php';</script>";
+            echo "<script>alert('¡Paciente registrado con éxito!'); window.location.href='atencion_pacientes';</script>";
             exit;
         }
 
@@ -121,13 +121,13 @@ if (isset($_POST['registrar_victima'])) {
                 $conn->commit();
                 $stmt->close();
 
-                echo "<script>alert('¡Registro del paciente actualizado!'); window.location.href='atencion_pacientes.php';</script>";
+                echo "<script>alert('¡Registro del paciente actualizado!'); window.location.href='atencion_pacientes';</script>";
                 exit;
 
             } catch (Exception $e) {
                 // Si algo falla o no está autorizado, cancelamos los cambios de forma segura
                 $conn->rollback();
-                echo "<script>alert('Error: " . $e->getMessage() . "'); window.location.href='atencion_pacientes.php';</script>";
+                echo "<script>alert('Error: " . $e->getMessage() . "'); window.location.href='atencion_pacientes';</script>";
                 exit;
             }
         }
@@ -149,7 +149,7 @@ if (isset($_POST['registrar_victima'])) {
             $conn->commit();
             $stmt->close();
 
-            echo "<script>alert('¡Registro de paciente eliminado correctamente!'); window.location.href='atencion_pacientes.php';</script>";
+            echo "<script>alert('¡Registro de paciente eliminado correctamente!'); window.location.href='atencion_pacientes';</script>";
             exit;
         }
 
@@ -179,7 +179,7 @@ if (isset($_POST['registrar_victima'])) {
 
 } catch (Exception $e) {
     if (isset($conn) && $conn->ping()) { $conn->rollback(); }
-    echo "<script>alert('❌ Error: " . addslashes($e->getMessage()) . "'); window.location.href='atencion_pacientes.php';</script>";
+    echo "<script>alert('❌ Error: " . addslashes($e->getMessage()) . "'); window.location.href='atencion_pacientes';</script>";
     exit;
 }
 
@@ -600,7 +600,7 @@ include('header.php');
                         for (let key in data) { bodyData.append(key, data[key]); }
                         bodyData.append('is_ajax', '1');
 
-                        return fetch('atencion_pacientes.php', {
+                        return fetch('atencion_pacientes', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                             body: bodyData

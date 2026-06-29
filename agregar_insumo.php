@@ -2,7 +2,7 @@
 session_start();
 // Control de acceso
 if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['centro_id'])) {
-    header("Location: login.php");
+    header("Location: login");
     exit;
 }
 
@@ -99,7 +99,7 @@ include('header.php');
             }
             this.cargando = true;
             try {
-                let response = await fetch(`agregar_insumo.php?buscar_insumo=${encodeURIComponent(this.nombreInsumo)}`);
+                let response = await fetch(`agregar_insumo?buscar_insumo=${encodeURIComponent(this.nombreInsumo)}`);
                 this.sugerencias = await response.json();
                 this.mostrarLista = this.sugerencias.length > 0;
                 
@@ -150,7 +150,7 @@ include('header.php');
                 </div>
             <?php endif; ?>
 
-            <form action="agregar_insumo.php" method="POST" class="space-y-4">
+            <form action="agregar_insumo" method="POST" class="space-y-4">
                 
                 <div class="flex flex-col gap-1 relative">
                     <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Buscar o Escribir Insumo</label>

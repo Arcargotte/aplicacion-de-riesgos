@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'administrador_central') { 
-    header("Location: login.php"); 
+    header("Location: login"); 
     exit; 
 }
 include('header.php');
@@ -31,7 +31,7 @@ include('header.php');
                 <h3 class="text-base font-bold text-slate-900">Inventario Global de Centros</h3>
                 <p class="text-xs text-slate-500 mt-1">Consolidado general de capacidades, estados e insumos totales distribuidos por todo el ecosistema de la organización.</p>
             </div>
-            <a href="procesar_excel.php?reporte=inventario_global" class="mt-5 block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition">
+            <a href="procesar_excel?reporte=inventario_global" class="mt-5 block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition">
                 Generar Inventario Global
             </a>
         </div>
@@ -41,7 +41,7 @@ include('header.php');
                 <h3 class="text-base font-bold text-slate-900">Insumos Disponibles por Centro</h3>
                 <p class="text-xs text-slate-500 mt-1">Desglose pormenorizado de stock actual, nombres de insumos, categorías y cantidades exactas albergadas en cada sede.</p>
             </div>
-            <a href="procesar_excel.php?reporte=insumos_centro" class="mt-5 block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition">
+            <a href="procesar_excel?reporte=insumos_centro" class="mt-5 block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition">
                 Generar Desglose por Sede
             </a>
         </div>
@@ -51,7 +51,7 @@ include('header.php');
                 <h3 class="text-base font-bold text-slate-900">Histórico de Movimientos</h3>
                 <p class="text-xs text-slate-500 mt-1">Auditoría completa cronológica de flujos operativos (entradas, donaciones externas, despachos y traslados internos).</p>
             </div>
-            <a href="procesar_excel.php?reporte=historico_movimientos" class="mt-5 block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition">
+            <a href="procesar_excel?reporte=historico_movimientos" class="mt-5 block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition">
                 Generar Libro de Auditoría
             </a>
         </div>
@@ -61,7 +61,7 @@ include('header.php');
                 <h3 class="text-base font-bold text-slate-900">Lista Global de Víctimas</h3>
                 <p class="text-xs text-slate-500 mt-1">Registro centralizado de personas damnificadas ingresadas al sistema, prioridades de atención médica y estatus de triaje.</p>
             </div>
-            <a href="procesar_excel.php?reporte=lista_victimas" class="mt-5 block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition">
+            <a href="procesar_excel?reporte=lista_victimas" class="mt-5 block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition">
                 Generar Listado de Víctimas
             </a>
         </div>
