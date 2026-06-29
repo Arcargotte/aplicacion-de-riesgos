@@ -28,7 +28,7 @@ if (isset($_POST['registrar_victima'])) {
             $centro_destino = $centro_id;
             $nombre = !empty(trim($_POST['nombre_apellido'])) ? $conn->real_escape_string($_POST['nombre_apellido']) : 'Desconocido';
             $cedula = !empty(trim($_POST['cedula'])) ? $conn->real_escape_string($_POST['cedula']) : 'X-XXXXXXXXX';
-            $contacto = !empty(trim($_POST['cedula'])) ? $conn->real_escape_string($_POST['cedula']) : 'XXXX-XXXXXXX';
+            $contacto = !empty(trim($_POST['contacto'])) ? $conn->real_escape_string($_POST['contacto']) : 'XXXX-XXXXXXX';
             $edad = intval($_POST['edad_aproximada']);
             $edad_unidad = $conn->real_escape_string($_POST['edad_unidad']);
             
