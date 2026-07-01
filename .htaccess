@@ -14,3 +14,4 @@ RewriteRule ^atencion_pacientes$ atencion_pacientes.php
 RewriteRule ^gestion_centros$ gestion_centros.php
 RewriteRule ^reportes_excel$ reportes_excel.php
 RewriteRule ^procesar_excel$ procesar_excel.php
+RewriteRule ^gestion_censo$ gestion_censo.php
